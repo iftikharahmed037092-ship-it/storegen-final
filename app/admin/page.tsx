@@ -19,7 +19,6 @@ export default async function AdminPage() {
     >
       <header style={{ marginBottom: "30px" }}>
         <h1>Super Admin Panel</h1>
-
         <p>
           Create and manage all client stores from
           one place.
@@ -27,10 +26,7 @@ export default async function AdminPage() {
       </header>
 
       <section style={{ marginBottom: "35px" }}>
-        <CreateStore
-          onCreated={() => {}}
-        />
-
+        <CreateStore />
         <RefreshStores />
       </section>
 
@@ -44,7 +40,6 @@ export default async function AdminPage() {
           }}
         >
           <h2>All Stores</h2>
-
           <strong>
             {stores.length} Store
             {stores.length !== 1 ? "s" : ""}
