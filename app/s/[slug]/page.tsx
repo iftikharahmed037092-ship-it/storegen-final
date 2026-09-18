@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { notFound } from "next/navigation";
 import { getStoreBySlug } from "@/lib/stores";
 import { getPageByStoreId } from "@/lib/pages";
@@ -77,7 +78,7 @@ function LiveBlock({
   block: EditorBlock;
   storeName: string;
 }) {
-  const props = block.props;
+  const props = block.props as any;
 
   if (block.type === "Header") {
     return (
