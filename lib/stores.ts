@@ -2,39 +2,43 @@ import { supabase } from "./supabase";
 import type { CreateStoreInput, Store } from "@/types/store";
 
 export async function getStores(): Promise<Store[]> {
-  const { data, error } = await supabase
-    .from("stores")
-    .select("*")
-    .order("created_at", {
-      ascending: false
-    });
+  try {
+    const { data, error } = await supabase
+      .from("stores")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      console.error("Supabase getStores error:", error.message);
+      return [];
+    }
+    return data ?? [];
+  } catch (err: any) {
+    console.error("getStores failed:", err.message);
+    return [];
   }
-
-  return data ?? [];
 }
 
-export async function getStoreBySlug(
-  slug: string
-): Promise<Store | null> {
-  const { data, error } = await supabase
-    .from("stores")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
+export async function getStoreBySlug(slug: string): Promise<Store | null> {
+  try {
+    const { data, error } = await supabase
+      .from("stores")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      console.error("getStoreBySlug error:", error.message);
+      return null;
+    }
+    return data;
+  } catch (err: any) {
+    console.error("getStoreBySlug failed:", err.message);
+    return null;
   }
-
-  return data;
 }
 
-export async function createStore(
-  input: CreateStoreInput
-): Promise<Store> {
+export async function createStore(input: CreateStoreInput): Promise<Store> {
   const { data, error } = await supabase
     .from("stores")
     .insert({
@@ -50,6 +54,5 @@ export async function createStore(
   if (error) {
     throw new Error(error.message);
   }
-
   return data;
 }
