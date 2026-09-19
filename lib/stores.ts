@@ -2,43 +2,37 @@ import { supabase } from "./supabase";
 import type { CreateStoreInput, Store } from "@/types/store";
 
 export async function getStores(): Promise<Store[]> {
-  try {
-    const { data, error } = await supabase
-      .from("stores")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("getStores error:", error.message);
-      return [];
-    }
-    return data ?? [];
-  } catch (err: any) {
-    console.error("getStores failed:", err?.message);
-    return [];
+  if (error) {
+    throw new Error(error.message);
   }
+
+  return data ?? [];
 }
 
-export async function getStoreBySlug(slug: string): Promise<Store | null> {
-  try {
-    const { data, error } = await supabase
-      .from("stores")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
+export async function getStoreBySlug(
+  slug: string
+): Promise<Store | null> {
+  const { data, error } = await supabase
+    .from("stores")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
 
-    if (error) {
-      console.error("getStoreBySlug error:", error.message);
-      return null;
-    }
-    return data;
-  } catch (err: any) {
-    console.error("getStoreBySlug failed:", err?.message);
-    return null;
+  if (error) {
+    throw new Error(error.message);
   }
+
+  return data;
 }
 
-export async function createStore(input: CreateStoreInput): Promise<Store> {
+export async function createStore(
+  input: CreateStoreInput
+): Promise<Store> {
   const { data, error } = await supabase
     .from("stores")
     .insert({
@@ -46,7 +40,8 @@ export async function createStore(input: CreateStoreInput): Promise<Store> {
       store_name: input.store_name,
       custom_domain: input.custom_domain || null,
       logo_url: input.logo_url || null,
-      primary_color: input.primary_color || "#000000"
+      primary_color: input.primary_color || "#000000",
+      whatsapp_number: input.whatsapp_number || null
     })
     .select("*")
     .single();
@@ -54,5 +49,6 @@ export async function createStore(input: CreateStoreInput): Promise<Store> {
   if (error) {
     throw new Error(error.message);
   }
+
   return data;
 }
