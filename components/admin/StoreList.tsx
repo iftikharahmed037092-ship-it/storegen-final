@@ -87,6 +87,15 @@ export default function StoreList({
             >
               Open Editor
             </Link>
+            <Link
+  href={`/admin/stores/${store.slug}`}
+  style={{
+    ...buttonStyle,
+    background: "#2563eb"
+  }}
+>
+  Products
+</Link>
 
             <Link
               href={`/s/${store.slug}`}
