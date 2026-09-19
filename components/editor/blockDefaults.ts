@@ -1,108 +1,186 @@
-import type { BlockType, EditorBlock } from "@/types/page";
+import type {
+  BlockType,
+  EditorBlock
+} from "@/types/page";
+
+function createId() {
+  return crypto.randomUUID();
+}
 
 export function createDefaultBlock(
   type: BlockType
 ): EditorBlock {
-  const id = crypto.randomUUID();
+  const baseStyle = {
+    backgroundColor: "#ffffff",
+    textColor: "#111827",
+
+    paddingTop: 40,
+    paddingRight: 20,
+    paddingBottom: 40,
+    paddingLeft: 20,
+
+    marginTop: 0,
+    marginBottom: 0,
+
+    maxWidth: 1200,
+
+    textAlign: "center" as const
+  };
 
   switch (type) {
     case "Header":
       return {
-        id,
+        id: createId(),
         type,
         props: {
           logoText: "My Store",
-          showSearch: true,
           showCart: true,
-          showMenu: true
+          showSearch: true
+        },
+        style: {
+          ...baseStyle,
+          paddingTop: 16,
+          paddingBottom: 16
         }
       };
 
     case "Hero":
       return {
-        id,
+        id: createId(),
         type,
         props: {
-          title: "Welcome to Our Store",
+          title:
+            "Welcome to Our Store",
           subtitle:
-            "Discover amazing products at great prices.",
-          buttonText: "Shop Now",
-          buttonLink: "#products",
-          imageUrl: "",
-          backgroundColor: "#f3f4f6"
+            "Discover our latest products",
+          buttonText:
+            "Shop Now",
+          buttonLink:
+            "#products",
+          backgroundImage: "",
+          buttonColor:
+            "#16a34a"
+        },
+        style: {
+          ...baseStyle,
+          paddingTop: 90,
+          paddingBottom: 90
         }
       };
 
     case "Products":
       return {
-        id,
+        id: createId(),
         type,
         props: {
-          title: "Featured Products",
+          title:
+            "Featured Products",
           limit: 8,
-          showPrice: true,
+          columns: 4,
+          showOldPrice: true,
           showButton: true
+        },
+        style: {
+          ...baseStyle,
+          paddingTop: 60,
+          paddingBottom: 60
         }
       };
 
     case "Features":
       return {
-        id,
+        id: createId(),
         type,
         props: {
-          title: "Why Shop With Us?",
+          title:
+            "Why Shop With Us",
           items: [
             {
-              title: "Fast Delivery",
-              description: "Quick and reliable delivery."
+              title:
+                "Fast Delivery",
+              text:
+                "Quick delivery to your doorstep."
             },
             {
-              title: "Cash on Delivery",
-              description: "Pay when your order arrives."
+              title:
+                "Secure Shopping",
+              text:
+                "Your information stays protected."
             },
             {
-              title: "Quality Products",
-              description: "Products selected with care."
+              title:
+                "Quality Products",
+              text:
+                "Carefully selected products."
             }
           ]
+        },
+        style: {
+          ...baseStyle,
+          paddingTop: 50,
+          paddingBottom: 50
         }
       };
 
     case "WhatsAppOrder":
       return {
-        id,
+        id: createId(),
         type,
         props: {
-          title: "Order on WhatsApp",
-          description:
-            "Contact us directly to place your order.",
-          phone: "",
-          buttonText: "Order on WhatsApp"
+          title:
+            "Order on WhatsApp",
+          phone:
+            "923000000000",
+          buttonText:
+            "Order Now",
+          message:
+            "Hello, I want to place an order."
+        },
+        style: {
+          ...baseStyle,
+          paddingTop: 50,
+          paddingBottom: 50
         }
       };
 
     case "Contact":
       return {
-        id,
+        id: createId(),
         type,
         props: {
-          title: "Contact Us",
-          phone: "",
-          email: "",
-          address: ""
+          title:
+            "Contact Us",
+          phone:
+            "+92 300 0000000",
+          email:
+            "info@example.com",
+          address:
+            "Pakistan"
+        },
+        style: {
+          ...baseStyle,
+          paddingTop: 50,
+          paddingBottom: 50
         }
       };
 
     case "Footer":
       return {
-        id,
+        id: createId(),
         type,
         props: {
-          text: "© 2026 My Store. All rights reserved."
+          text:
+            "© 2026 My Store. All rights reserved."
+        },
+        style: {
+          ...baseStyle,
+          backgroundColor:
+            "#111827",
+          textColor:
+            "#ffffff",
+          paddingTop: 30,
+          paddingBottom: 30
         }
       };
-
-    default:
-      throw new Error(`Unsupported block: ${type}`);
   }
 }
