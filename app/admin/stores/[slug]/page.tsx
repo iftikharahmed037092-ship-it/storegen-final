@@ -73,6 +73,12 @@ export default async function StoreManagePage({
         />
 
         <ManageCard
+          title="Store Settings"
+          description="Logo, Color, WhatsApp, Shipping and delete store."
+          href={`/admin/stores/${store.slug}/settings`}
+        />
+
+        <ManageCard
           title="Editor"
           description="Open the private visual editor."
           href={`/editor/${store.slug}`}
