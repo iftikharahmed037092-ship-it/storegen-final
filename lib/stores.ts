@@ -9,12 +9,12 @@ export async function getStores(): Promise<Store[]> {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Supabase getStores error:", error.message);
+      console.error("getStores error:", error.message);
       return [];
     }
     return data ?? [];
   } catch (err: any) {
-    console.error("getStores failed:", err.message);
+    console.error("getStores failed:", err?.message);
     return [];
   }
 }
@@ -33,7 +33,7 @@ export async function getStoreBySlug(slug: string): Promise<Store | null> {
     }
     return data;
   } catch (err: any) {
-    console.error("getStoreBySlug failed:", err.message);
+    console.error("getStoreBySlug failed:", err?.message);
     return null;
   }
 }
