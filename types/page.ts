@@ -7,10 +7,43 @@ export type BlockType =
   | "Contact"
   | "Footer";
 
+export type DeviceType =
+  | "desktop"
+  | "tablet"
+  | "mobile";
+
+export interface BlockStyle {
+  backgroundColor?: string;
+  textColor?: string;
+
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+
+  marginTop?: number;
+  marginBottom?: number;
+
+  maxWidth?: number;
+
+  textAlign?:
+    | "left"
+    | "center"
+    | "right";
+}
+
 export interface EditorBlock {
   id: string;
   type: BlockType;
-  props: Record<string, unknown>;
+
+  props: Record<
+    string,
+    unknown
+  >;
+
+  style?: BlockStyle;
+
+  hidden?: boolean;
 }
 
 export interface PageData {
