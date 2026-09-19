@@ -2,23 +2,42 @@ import { NextResponse } from "next/server";
 
 import { supabase } from "@/lib/supabase";
 
+import type { OrderStatus } from "@/types/order";
+
+const allowedStatuses: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled"
+];
+
 interface RouteProps {
   params: Promise<{
     id: string;
   }>;
 }
 
-export async function GET(
+export async function PATCH(
   request: Request,
-  context: RouteProps
+  { params }: RouteProps
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
 
-    if (!id) {
+    const body = await request.json();
+
+    const status =
+      body?.status as OrderStatus;
+
+    if (
+      !allowedStatuses.includes(status)
+    ) {
       return NextResponse.json(
         {
-          error: "Order ID is required."
+          error:
+            "Invalid order status."
         },
         {
           status: 400
@@ -26,69 +45,45 @@ export async function GET(
       );
     }
 
+    const {
+      data,
+      error
+    } = await supabase
+      .from("orders")
+      .update({
+        status,
+        updated_at:
+          new Date().toISOString()
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
 
-    const { data: order, error: orderError } =
-      await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-
-
-    if (orderError) {
-      throw new Error(
-        orderError.message
-      );
-    }
-
-
-    if (!order) {
+    if (error) {
       return NextResponse.json(
         {
-          error: "Order not found."
+          error: error.message
         },
         {
-          status: 404
+          status: 400
         }
       );
     }
 
-
-    const { data: items, error: itemsError } =
-      await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", id)
-        .order("id", {
-          ascending: true
-        });
-
-
-    if (itemsError) {
-      throw new Error(
-        itemsError.message
-      );
-    }
-
-
     return NextResponse.json({
-      order,
-      items: items ?? []
+      order: data
     });
 
   } catch (error) {
-
     console.error(
-      "Order fetch error:",
+      "Order status update error:",
       error
     );
 
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Unable to load order."
+          "Unable to update order."
       },
       {
         status: 500
