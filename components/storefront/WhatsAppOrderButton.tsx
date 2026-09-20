@@ -20,8 +20,9 @@ export default function WhatsAppOrderButton({
 
 
   function openWhatsApp() {
-    const cleanPhone =
-      phone.replace(/\D/g, "");
+  if (!phone) return;
+  const cleanPhone = 
+    phone.replace(/\D/g, "");
 
 
     const message =
