@@ -39,7 +39,7 @@ export default async function StoreProductsPage({
 
       <ProductManager
         storeId={store.id}
-        storeName={store.store_name || store.name}
+        storeName={store.store_name}
       />
     </div>
   );
