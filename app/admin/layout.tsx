@@ -79,6 +79,11 @@ export default function AdminLayout({
               href="/admin/customers"
               label="Customers"
             />
+
+            <AdminLink
+              href="/admin/analytics"
+              label="Analytics"
+            />
           </nav>
         </div>
       </header>
