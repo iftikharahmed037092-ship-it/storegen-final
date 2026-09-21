@@ -1,38 +1,170 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createProduct, getProductsByStoreId } from "@/lib/products";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+import {
+  createProduct,
+  getProductsByStoreId
+} from "@/lib/products";
+
+export async function GET(
+  request: Request
+) {
   try {
-    const storeId = request.nextUrl.searchParams.get("storeId");
-    if (!storeId) return NextResponse.json({ error: "storeId is required" }, { status: 400 });
-    const products = await getProductsByStoreId(storeId);
-    return NextResponse.json({ products });
+    const { searchParams } =
+      new URL(request.url);
+
+    const storeId =
+      searchParams.get(
+        "storeId"
+      );
+
+    if (!storeId) {
+      return NextResponse.json(
+        {
+          error:
+            "storeId is required."
+        },
+        { status: 400 }
+      );
+    }
+
+    const products =
+      await getProductsByStoreId(
+        storeId
+      );
+
+    return NextResponse.json({
+      products
+    });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to load products" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to load products."
+      },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: Request
+) {
   try {
-    const body = await request.json();
-    if (!body.store_id) return NextResponse.json({ error: "store_id is required" }, { status: 400 });
-    if (!body.name?.trim()) return NextResponse.json({ error: "Product name is required" }, { status: 400 });
-    const price = Number(body.price);
-    if (!Number.isFinite(price) || price < 0) return NextResponse.json({ error: "Invalid price" }, { status: 400 });
+    const body =
+      await request.json();
 
-    const product = await createProduct({
-      store_id: body.store_id,
-      name: body.name.trim(),
-      price,
-      old_price: body.old_price === "" ? null : Number(body.old_price || 0),
-      image_url: body.image_url || null,
-      description: body.description || null,
-      stock: Number(body.stock || 0),
-      sku: body.sku || null,
-      published: typeof body.published === "boolean" ? body.published : true
-    });
-    return NextResponse.json(product, { status: 201 });
+    const storeId =
+      String(
+        body.store_id ?? ""
+      ).trim();
+
+    const name =
+      String(
+        body.name ?? ""
+      ).trim();
+
+    const price =
+      Number(body.price);
+
+    if (!storeId) {
+      return NextResponse.json(
+        {
+          error:
+            "store_id is required."
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!name) {
+      return NextResponse.json(
+        {
+          error:
+            "Product name is required."
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !Number.isFinite(price) ||
+      price < 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Price must be valid."
+        },
+        { status: 400 }
+      );
+    }
+
+    const product =
+      await createProduct({
+        store_id:
+          storeId,
+
+        category_id:
+          body.category_id ??
+          null,
+
+        name,
+
+        price,
+
+        old_price:
+          body.old_price ??
+          null,
+
+        image_url:
+          body.image_url ??
+          null,
+
+        image_urls:
+          Array.isArray(
+            body.image_urls
+          )
+            ? body.image_urls
+            : [],
+
+        description:
+          body.description ??
+          null,
+
+        stock:
+          Number(
+            body.stock ?? 0
+          ),
+
+        sku:
+          body.sku ??
+          null,
+
+        published:
+          body.published ??
+          true
+      });
+
+    return NextResponse.json(
+      {
+        success: true,
+        product
+      },
+      {
+        status: 201
+      }
+    );
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to create product" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create product."
+      },
+      { status: 500 }
+    );
   }
 }
