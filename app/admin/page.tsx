@@ -14,7 +14,6 @@ import AdminStats
 import AdminDashboard
   from "@/components/admin/AdminDashboard";
 
-
 export default async function AdminPage() {
 
   const [
@@ -24,7 +23,6 @@ export default async function AdminPage() {
     getAdminStats(),
     getAdminDashboardData()
   ]);
-
 
   return (
     <div>
@@ -64,24 +62,45 @@ export default async function AdminPage() {
 
         </div>
 
-
-        <Link
-          href="/admin/analytics"
+        <div
           style={{
-            padding:
-              "10px 15px",
-            borderRadius: 8,
-            background:
-              "#2563eb",
-            color: "#fff",
-            fontWeight: 800
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap"
           }}
         >
-          Open Analytics
-        </Link>
+          <Link
+            href="/admin/generator"
+            style={{
+              padding:
+                "11px 16px",
+              borderRadius: 8,
+              background:
+                "#16a34a",
+              color: "#fff",
+              fontWeight: 800
+            }}
+          >
+            + Create Client Website
+          </Link>
+
+          <Link
+            href="/admin/analytics"
+            style={{
+              padding:
+                "11px 15px",
+              borderRadius: 8,
+              background:
+                "#2563eb",
+              color: "#fff",
+              fontWeight: 800
+            }}
+          >
+            Open Analytics
+          </Link>
+        </div>
 
       </div>
-
 
       <div
         style={{
@@ -97,7 +116,6 @@ export default async function AdminPage() {
         />
 
       </div>
-
 
       <div
         style={{
