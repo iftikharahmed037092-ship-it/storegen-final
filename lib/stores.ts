@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+
 import type {
   Store,
   CreateStoreInput,
@@ -9,7 +10,9 @@ export async function getStores(): Promise<Store[]> {
   const { data, error } = await supabase
     .from("stores")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false
+    });
 
   if (error) {
     throw new Error(error.message);
@@ -44,13 +47,32 @@ export async function createStore(
       store_name: input.store_name,
       custom_domain: input.custom_domain || null,
       logo_url: input.logo_url || null,
-      primary_color: input.primary_color || "#16a34a",
-      whatsapp_number: input.whatsapp_number || null,
-      shipping_fee: input.shipping_fee ?? 0,
-      is_active: input.is_active ?? true,
+      primary_color:
+        input.primary_color || "#16a34a",
+      whatsapp_number:
+        input.whatsapp_number || null,
+      shipping_fee:
+        input.shipping_fee ?? 0,
+      is_active:
+        input.is_active ?? true,
 
-      business_type: input.business_type || "general",
-      template_type: input.template_type || "classic"
+      business_type:
+        input.business_type || "general",
+
+      template_type:
+        input.template_type || "classic",
+
+      contact_phone:
+        input.contact_phone || null,
+
+      contact_email:
+        input.contact_email || null,
+
+      address:
+        input.address || null,
+
+      social_links:
+        input.social_links || {}
     })
     .select("*")
     .single();
@@ -73,39 +95,68 @@ export async function updateStore(
   }
 
   if (input.store_name !== undefined) {
-    updateData.store_name = input.store_name;
+    updateData.store_name =
+      input.store_name;
   }
 
   if (input.custom_domain !== undefined) {
-    updateData.custom_domain = input.custom_domain;
+    updateData.custom_domain =
+      input.custom_domain;
   }
 
   if (input.logo_url !== undefined) {
-    updateData.logo_url = input.logo_url;
+    updateData.logo_url =
+      input.logo_url;
   }
 
   if (input.primary_color !== undefined) {
-    updateData.primary_color = input.primary_color;
+    updateData.primary_color =
+      input.primary_color;
   }
 
   if (input.whatsapp_number !== undefined) {
-    updateData.whatsapp_number = input.whatsapp_number;
+    updateData.whatsapp_number =
+      input.whatsapp_number;
   }
 
   if (input.shipping_fee !== undefined) {
-    updateData.shipping_fee = input.shipping_fee;
+    updateData.shipping_fee =
+      input.shipping_fee;
   }
 
   if (input.is_active !== undefined) {
-    updateData.is_active = input.is_active;
+    updateData.is_active =
+      input.is_active;
   }
 
   if (input.business_type !== undefined) {
-    updateData.business_type = input.business_type;
+    updateData.business_type =
+      input.business_type;
   }
 
   if (input.template_type !== undefined) {
-    updateData.template_type = input.template_type;
+    updateData.template_type =
+      input.template_type;
+  }
+
+  if (input.contact_phone !== undefined) {
+    updateData.contact_phone =
+      input.contact_phone;
+  }
+
+  if (input.contact_email !== undefined) {
+    updateData.contact_email =
+      input.contact_email;
+  }
+
+  if (input.address !== undefined) {
+    updateData.address =
+      input.address;
+  }
+
+  if (input.social_links !== undefined) {
+    updateData.social_links =
+      input.social_links;
   }
 
   const { data, error } = await supabase
@@ -122,7 +173,9 @@ export async function updateStore(
   return data as Store;
 }
 
-export async function deleteStore(id: string): Promise<void> {
+export async function deleteStore(
+  id: string
+): Promise<void> {
   const { error } = await supabase
     .from("stores")
     .delete()
