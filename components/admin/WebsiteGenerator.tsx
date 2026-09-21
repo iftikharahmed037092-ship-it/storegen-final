@@ -296,8 +296,8 @@ export default function WebsiteGenerator() {
       );
 
       router.push(
-        `/admin/stores/${data.website.slug}`
-      );
+  `/admin/generator/success/${data.website.slug}`
+);
     } catch (err) {
       setError(
         err instanceof Error
