@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
 
-import {
-  generateWebsite
-} from "@/lib/website-generator";
-
+import { generateWebsite } from "@/lib/website-generator";
 import type {
   BusinessType,
   TemplateType
 } from "@/types/store";
 
-const BUSINESS_TYPES: BusinessType[] = [
+const businessTypes: BusinessType[] = [
   "general",
   "garments",
   "shoes",
@@ -17,247 +14,204 @@ const BUSINESS_TYPES: BusinessType[] = [
   "electronics"
 ];
 
-const TEMPLATE_TYPES: TemplateType[] = [
+const templateTypes: TemplateType[] = [
   "classic",
   "modern",
   "minimal"
 ];
 
-export async function POST(
-  request: Request
-) {
+function cleanString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function isValidSlug(slug: string) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+}
+
+export async function POST(request: Request) {
   try {
-    const body =
-      await request.json();
+    const body = await request.json();
 
-    const store_name =
-      String(
-        body.store_name ?? ""
-      ).trim();
+    const store_name = cleanString(body.store_name);
+    const slug = cleanString(body.slug).toLowerCase();
 
-    const slug =
-      String(
-        body.slug ?? ""
-      )
-        .trim()
-        .toLowerCase();
+    const custom_domain = cleanString(body.custom_domain);
+    const logo_url = cleanString(body.logo_url);
+    const primary_color =
+      cleanString(body.primary_color) || "#16a34a";
 
-    const business_type =
-      String(
-        body.business_type ??
-          "general"
-      ) as BusinessType;
+    const whatsapp_number = cleanString(
+      body.whatsapp_number
+    );
 
-    const template_type =
-      String(
-        body.template_type ??
-          "classic"
-      ) as TemplateType;
+    const contact_phone = cleanString(body.contact_phone);
+    const contact_email = cleanString(body.contact_email);
+    const address = cleanString(body.address);
 
+    const business_type = body.business_type as BusinessType;
+    const template_type = body.template_type as TemplateType;
+
+    const shipping_fee = Number(body.shipping_fee ?? 0);
+
+    const social_links =
+      body.social_links &&
+      typeof body.social_links === "object"
+        ? {
+            facebook: cleanString(body.social_links.facebook),
+            instagram: cleanString(body.social_links.instagram),
+            tiktok: cleanString(body.social_links.tiktok),
+            youtube: cleanString(body.social_links.youtube)
+          }
+        : {};
+
+    // Store name
     if (!store_name) {
       return NextResponse.json(
         {
-          success: false,
-          error:
-            "Store name is required."
+          error: "Store name is required."
         },
         { status: 400 }
       );
     }
 
+    if (store_name.length < 2) {
+      return NextResponse.json(
+        {
+          error: "Store name must contain at least 2 characters."
+        },
+        { status: 400 }
+      );
+    }
+
+    // Slug
     if (!slug) {
       return NextResponse.json(
         {
-          success: false,
-          error:
-            "Store slug is required."
+          error: "Store slug is required."
         },
         { status: 400 }
       );
     }
 
+    if (!isValidSlug(slug)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid store slug. Use lowercase letters, numbers and hyphens only."
+        },
+        { status: 400 }
+      );
+    }
+
+    if (slug.length < 2 || slug.length > 60) {
+      return NextResponse.json(
+        {
+          error:
+            "Store slug must be between 2 and 60 characters."
+        },
+        { status: 400 }
+      );
+    }
+
+    // Business type
+    if (!businessTypes.includes(business_type)) {
+      return NextResponse.json(
+        {
+          error: "Invalid business type."
+        },
+        { status: 400 }
+      );
+    }
+
+    // Template
+    if (!templateTypes.includes(template_type)) {
+      return NextResponse.json(
+        {
+          error: "Invalid website template."
+        },
+        { status: 400 }
+      );
+    }
+
+    // Shipping
+    if (!Number.isFinite(shipping_fee) || shipping_fee < 0) {
+      return NextResponse.json(
+        {
+          error: "Shipping fee must be 0 or greater."
+        },
+        { status: 400 }
+      );
+    }
+
+    // Email
     if (
-      !/^[a-z0-9-]+$/.test(
-        slug
-      )
+      contact_email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email)
     ) {
       return NextResponse.json(
         {
-          success: false,
-          error:
-            "Slug can contain only lowercase letters, numbers and hyphens."
+          error: "Please enter a valid contact email."
         },
         { status: 400 }
       );
     }
 
-    if (
-      !BUSINESS_TYPES.includes(
-        business_type
-      )
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Invalid business type."
-        },
-        { status: 400 }
-      );
-    }
+    const generated = await generateWebsite({
+      store_name,
+      slug,
+      custom_domain: custom_domain || null,
+      logo_url: logo_url || null,
+      primary_color,
+      whatsapp_number: whatsapp_number || null,
+      shipping_fee,
+      is_active: true,
 
-    if (
-      !TEMPLATE_TYPES.includes(
-        template_type
-      )
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Invalid template type."
-        },
-        { status: 400 }
-      );
-    }
+      business_type,
+      template_type,
 
-    const shipping_fee =
-      Number(
-        body.shipping_fee ?? 0
-      );
+      contact_phone: contact_phone || null,
+      contact_email: contact_email || null,
+      address: address || null,
 
-    if (
-      !Number.isFinite(
-        shipping_fee
-      ) ||
-      shipping_fee < 0
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Shipping fee must be a valid non-negative number."
-        },
-        { status: 400 }
-      );
-    }
-
-    const socialLinks = {
-      facebook:
-        String(
-          body.social_links?.facebook ??
-            ""
-        ).trim(),
-
-      instagram:
-        String(
-          body.social_links?.instagram ??
-            ""
-        ).trim(),
-
-      tiktok:
-        String(
-          body.social_links?.tiktok ??
-            ""
-        ).trim(),
-
-      youtube:
-        String(
-          body.social_links?.youtube ??
-            ""
-        ).trim()
-    };
-
-    const website =
-      await generateWebsite({
-        store_name,
-
-        slug,
-
-        custom_domain:
-          String(
-            body.custom_domain ?? ""
-          ).trim() ||
-          undefined,
-
-        logo_url:
-          String(
-            body.logo_url ?? ""
-          ).trim() ||
-          undefined,
-
-        primary_color:
-          String(
-            body.primary_color ??
-              "#16a34a"
-          ).trim(),
-
-        whatsapp_number:
-          String(
-            body.whatsapp_number ??
-              ""
-          ).trim() ||
-          undefined,
-
-        shipping_fee,
-
-        is_active:
-          true,
-
-        business_type,
-
-        template_type,
-
-        contact_phone:
-          String(
-            body.contact_phone ??
-              ""
-          ).trim() ||
-          undefined,
-
-        contact_email:
-          String(
-            body.contact_email ??
-              ""
-          ).trim() ||
-          undefined,
-
-        address:
-          String(
-            body.address ?? ""
-          ).trim() ||
-          undefined,
-
-        social_links:
-          socialLinks
-      });
+      social_links
+    });
 
     return NextResponse.json(
       {
         success: true,
-        website
+        generated
       },
-      {
-        status: 201
-      }
+      { status: 201 }
     );
   } catch (error) {
-    console.error(
-      "Website generator error:",
-      error
-    );
+    console.error("Website generation error:", error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Website generation failed.";
+
+    // PostgreSQL/Supabase unique constraint
+    if (
+      message.toLowerCase().includes("duplicate") ||
+      message.toLowerCase().includes("unique") ||
+      message.toLowerCase().includes("stores_slug")
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "This store slug already exists. Please choose another slug."
+        },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json(
       {
-        success: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "Failed to generate website."
+          "Website could not be generated. Please check your information and try again."
       },
-      {
-        status: 500
-      }
+      { status: 500 }
     );
   }
 }
