@@ -10,6 +10,13 @@ export type TemplateType =
   | "modern"
   | "minimal";
 
+export interface SocialLinks {
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+}
+
 export interface Store {
   id: string;
   slug: string;
@@ -23,6 +30,11 @@ export interface Store {
 
   business_type: BusinessType;
   template_type: TemplateType;
+
+  contact_phone: string | null;
+  contact_email: string | null;
+  address: string | null;
+  social_links: SocialLinks;
 
   created_at: string;
 }
@@ -39,6 +51,11 @@ export interface CreateStoreInput {
 
   business_type?: BusinessType;
   template_type?: TemplateType;
+
+  contact_phone?: string;
+  contact_email?: string;
+  address?: string;
+  social_links?: SocialLinks;
 }
 
 export interface UpdateStoreInput {
@@ -53,4 +70,9 @@ export interface UpdateStoreInput {
 
   business_type?: BusinessType;
   template_type?: TemplateType;
+
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  address?: string | null;
+  social_links?: SocialLinks;
 }
