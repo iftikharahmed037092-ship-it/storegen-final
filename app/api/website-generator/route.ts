@@ -23,31 +23,43 @@ const TEMPLATE_TYPES: TemplateType[] = [
   "minimal"
 ];
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    const body = await request.json();
+    const body =
+      await request.json();
 
-    const store_name = String(
-      body.store_name ?? ""
-    ).trim();
+    const store_name =
+      String(
+        body.store_name ?? ""
+      ).trim();
 
-    const slug = String(
-      body.slug ?? ""
-    ).trim().toLowerCase();
+    const slug =
+      String(
+        body.slug ?? ""
+      )
+        .trim()
+        .toLowerCase();
 
-    const business_type = String(
-      body.business_type ?? "general"
-    ) as BusinessType;
+    const business_type =
+      String(
+        body.business_type ??
+          "general"
+      ) as BusinessType;
 
-    const template_type = String(
-      body.template_type ?? "classic"
-    ) as TemplateType;
+    const template_type =
+      String(
+        body.template_type ??
+          "classic"
+      ) as TemplateType;
 
     if (!store_name) {
       return NextResponse.json(
         {
           success: false,
-          error: "Store name is required."
+          error:
+            "Store name is required."
         },
         { status: 400 }
       );
@@ -57,13 +69,18 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Store slug is required."
+          error:
+            "Store slug is required."
         },
         { status: 400 }
       );
     }
 
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (
+      !/^[a-z0-9-]+$/.test(
+        slug
+      )
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -74,76 +91,161 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!BUSINESS_TYPES.includes(business_type)) {
+    if (
+      !BUSINESS_TYPES.includes(
+        business_type
+      )
+    ) {
       return NextResponse.json(
         {
           success: false,
-          error: "Invalid business type."
+          error:
+            "Invalid business type."
         },
         { status: 400 }
       );
     }
-
-    if (!TEMPLATE_TYPES.includes(template_type)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid template type."
-        },
-        { status: 400 }
-      );
-    }
-
-    const shipping_fee = Number(
-      body.shipping_fee ?? 0
-    );
 
     if (
-      !Number.isFinite(shipping_fee) ||
+      !TEMPLATE_TYPES.includes(
+        template_type
+      )
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Invalid template type."
+        },
+        { status: 400 }
+      );
+    }
+
+    const shipping_fee =
+      Number(
+        body.shipping_fee ?? 0
+      );
+
+    if (
+      !Number.isFinite(
+        shipping_fee
+      ) ||
       shipping_fee < 0
     ) {
       return NextResponse.json(
         {
           success: false,
-          error: "Shipping fee must be a valid non-negative number."
+          error:
+            "Shipping fee must be a valid non-negative number."
         },
         { status: 400 }
       );
     }
 
-    const website = await generateWebsite({
-      store_name,
-      slug,
+    const socialLinks = {
+      facebook:
+        String(
+          body.social_links?.facebook ??
+            ""
+        ).trim(),
 
-      custom_domain:
-        String(body.custom_domain ?? "").trim() || undefined,
+      instagram:
+        String(
+          body.social_links?.instagram ??
+            ""
+        ).trim(),
 
-      logo_url:
-        String(body.logo_url ?? "").trim() || undefined,
+      tiktok:
+        String(
+          body.social_links?.tiktok ??
+            ""
+        ).trim(),
 
-      primary_color:
-        String(body.primary_color ?? "#16a34a").trim(),
+      youtube:
+        String(
+          body.social_links?.youtube ??
+            ""
+        ).trim()
+    };
 
-      whatsapp_number:
-        String(body.whatsapp_number ?? "").trim() || undefined,
+    const website =
+      await generateWebsite({
+        store_name,
 
-      shipping_fee,
+        slug,
 
-      is_active: true,
+        custom_domain:
+          String(
+            body.custom_domain ?? ""
+          ).trim() ||
+          undefined,
 
-      business_type,
-      template_type
-    });
+        logo_url:
+          String(
+            body.logo_url ?? ""
+          ).trim() ||
+          undefined,
+
+        primary_color:
+          String(
+            body.primary_color ??
+              "#16a34a"
+          ).trim(),
+
+        whatsapp_number:
+          String(
+            body.whatsapp_number ??
+              ""
+          ).trim() ||
+          undefined,
+
+        shipping_fee,
+
+        is_active:
+          true,
+
+        business_type,
+
+        template_type,
+
+        contact_phone:
+          String(
+            body.contact_phone ??
+              ""
+          ).trim() ||
+          undefined,
+
+        contact_email:
+          String(
+            body.contact_email ??
+              ""
+          ).trim() ||
+          undefined,
+
+        address:
+          String(
+            body.address ?? ""
+          ).trim() ||
+          undefined,
+
+        social_links:
+          socialLinks
+      });
 
     return NextResponse.json(
       {
         success: true,
         website
       },
-      { status: 201 }
+      {
+        status: 201
+      }
     );
   } catch (error) {
-    console.error("Website generator error:", error);
+    console.error(
+      "Website generator error:",
+      error
+    );
 
     return NextResponse.json(
       {
@@ -153,7 +255,9 @@ export async function POST(request: Request) {
             ? error.message
             : "Failed to generate website."
       },
-      { status: 500 }
+      {
+        status: 500
+      }
     );
   }
 }
