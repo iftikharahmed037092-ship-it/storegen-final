@@ -2,6 +2,8 @@ export interface Product {
   id: string;
   store_id: string;
 
+  category_id: string | null;
+
   name: string;
   price: number;
   old_price: number | null;
@@ -12,6 +14,7 @@ export interface Product {
   description: string | null;
 
   stock: number;
+
   sku: string | null;
 
   published: boolean;
@@ -23,8 +26,11 @@ export interface Product {
 export interface CreateProductInput {
   store_id: string;
 
+  category_id?: string | null;
+
   name: string;
   price: number;
+
   old_price?: number | null;
 
   image_url?: string | null;
@@ -33,14 +39,18 @@ export interface CreateProductInput {
   description?: string | null;
 
   stock?: number;
+
   sku?: string | null;
 
   published?: boolean;
 }
 
 export interface UpdateProductInput {
+  category_id?: string | null;
+
   name?: string;
   price?: number;
+
   old_price?: number | null;
 
   image_url?: string | null;
@@ -49,6 +59,7 @@ export interface UpdateProductInput {
   description?: string | null;
 
   stock?: number;
+
   sku?: string | null;
 
   published?: boolean;
