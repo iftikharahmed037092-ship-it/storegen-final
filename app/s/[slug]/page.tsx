@@ -27,8 +27,7 @@ export default async function StorePage({
   const page =
     await getPageByStoreId(store.id);
 
-  const blocks =
-    page?.page_data?.content || [];
+  const blocks = (page as any)?.page_data?.content || [];
 
   return (
     <main
