@@ -220,3 +220,21 @@ export async function deleteProduct(
     throw new Error(error.message);
   }
 }
+
+export async function getPublishedProductsByStoreId(
+  storeId: string
+): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("store_id", storeId)
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as Product[];
+}
+
