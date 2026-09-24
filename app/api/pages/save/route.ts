@@ -1,36 +1,32 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: Request) {
   try {
     const { storeId, pageData } = await req.json();
-    if (!storeId || !pageData?.content) {
-      return NextResponse.json({ error: "Missing data" }, { status: 400 });
-    }
-    
-    const blocksArray = pageData.content;
-    if (!Array.isArray(blocksArray) || blocksArray.length === 0) {
-      return NextResponse.json({ error: "Cannot save empty design" }, { status: 400 });
-    }
+    const blocks = pageData?.content || [];
 
-    const supabase = supabaseAdmin();
-
-    // Save in all columns to fix old structure
-    const payload = {
-      store_id: storeId,
-      slug: "home",
-      title: "Home",
-      content: { blocks: blocksArray },
-      blocks: blocksArray,
-      data: blocksArray,
-      is_published: true,
-      published: true,
-      updated_at: new Date().toISOString(),
-    };
+    if (!storeId || !Array.isArray(blocks) || blocks.length === 0) {
+      return NextResponse.json({ error: "Empty data" }, { status: 400 });
+    }
 
     const { error } = await supabase
       .from("pages")
-      .upsert(payload, { onConflict: "store_id,slug" });
+      .upsert(
+        {
+          store_id: storeId,
+          slug: "home",
+          title: "Home",
+          content: { blocks: blocks },
+          page_data: pageData,
+          blocks: blocks,
+          data: blocks,
+          is_published: true,
+          published: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "store_id,slug" }
+      );
 
     if (error) throw error;
 
