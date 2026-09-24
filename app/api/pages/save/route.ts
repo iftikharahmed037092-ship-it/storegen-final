@@ -2,33 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    
-    // ایڈیٹر کے فارمیٹ کے مطابق تمام ممکنہ طریقوں سے IDs اور Content نکالنا
     const storeId = body.storeId || body.store_id
     const pageData = body.pageData || {}
-    const content = pageData.content || body.content || body.blocks || body.data || []
+    const content = pageData.content || body.content || []
 
-    if (!storeId) {
-      return NextResponse.json({ error: 'storeId missing' }, { status: 400 })
-    }
+    if (!storeId) return NextResponse.json({ error: 'storeId missing' }, { status: 400 })
 
-    const { error } = await supabase
-      .from('pages')
-      .upsert({
-        store_id: storeId,
-        slug: 'home',
-        content: content,
-        blocks: content,
-        is_published: true,
-        published: true,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'store_id,slug' })
+    const { error } = await supabase.from('pages').upsert({
+      store_id: storeId,
+      slug: 'home',
+      content: content,
+      blocks: content,
+      is_published: true,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'store_id,slug' })
 
     if (error) throw error
     return NextResponse.json({ success: true })
