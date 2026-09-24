@@ -1,26 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const storeId = body.storeId || body.store_id
-    const pageData = body.pageData || {}
-    const content = pageData.content || body.content || []
+    const storeId = body.store_id || body.storeId
+    const content = body.content || body.pagedata?.content || []
 
-    if (!storeId) return NextResponse.json({ error: 'storeId missing' }, { status: 400 })
+    if (!storeId) return NextResponse.json({ error: 'store_id missing' }, { status: 400 })
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     const { error } = await supabase.from('pages').upsert({
       store_id: storeId,
       slug: 'home',
       content: content,
       blocks: content,
-      is_published: true,
-      updated_at: new Date().toISOString()
+      is_published: true
     }, { onConflict: 'store_id,slug' })
 
     if (error) throw error
@@ -30,8 +29,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-
-
 export async function GET() {
-  return NextResponse.json({ ok: true, message: 'use POST to save' })
+  return NextResponse.json({ ok: true })
 }
