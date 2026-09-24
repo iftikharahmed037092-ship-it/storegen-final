@@ -1,52 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
-import { savePage } from "@/lib/pages";
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST(
-  request: NextRequest
-) {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await req.json()
+    
+    // ایڈیٹر کے فارمیٹ کے مطابق تمام ممکنہ طریقوں سے IDs اور Content نکالنا
+    const storeId = body.storeId || body.store_id
+    const pageData = body.pageData || {}
+    const content = pageData.content || body.content || body.blocks || body.data || []
 
-    const storeId = body?.storeId;
-    const pageData = body?.pageData;
-
-    if (
-      typeof storeId !== "string" ||
-      !pageData ||
-      typeof pageData !== "object"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "storeId and pageData are required."
-        },
-        { status: 400 }
-      );
+    if (!storeId) {
+      return NextResponse.json({ error: 'storeId missing' }, { status: 400 })
     }
 
-    const page = await savePage(
-      storeId,
-      pageData
-    );
+    const { error } = await supabase
+      .from('pages')
+      .upsert({
+        store_id: storeId,
+        slug: 'home',
+        content: content,
+        blocks: content,
+        is_published: true,
+        published: true,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'store_id,slug' })
 
-    return NextResponse.json({
-      success: true,
-      page
-    });
-  } catch (error) {
-    console.error(
-      "SAVE_PAGE_ERROR:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to save page."
-      },
-      { status: 500 }
-    );
+    if (error) throw error
+    return NextResponse.json({ success: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
