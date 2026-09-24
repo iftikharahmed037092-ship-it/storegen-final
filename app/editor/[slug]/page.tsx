@@ -10,40 +10,43 @@ interface Props {
   }>;
 }
 
-export default async function EditorPage({
-  params
-}: Props) {
+export default async function EditorPage({ params }: Props) {
   const { slug } = await params;
+  const store = await getStoreBySlug(slug);
+  if (!store) notFound();
 
-  const store =
-    await getStoreBySlug(slug);
+  const page: any = await getPageByStoreId(store.id);
 
-  if (!store) {
-    notFound();
-  }
+  let blocks: any[] = [];
 
-  const page: any =
-    await getPageByStoreId(store.id);
-
-  const defaultData: PageData = {
-    version: 1,
-    content: []
-  };
-
-  // page_data یا content دونوں میں سے جو بھی ملے اسے لوڈ کرو
-  let loadedData: PageData = defaultData;
   if (page) {
-    if (page.page_data && typeof page.page_data === 'object' && page.page_data.content?.length > 0) {
-      loadedData = page.page_data as PageData;
-    } else if (page.content) {
+    // 1. check page_data
+    if (page.page_data?.content && Array.isArray(page.page_data.content)) {
+      blocks = page.page_data.content;
+    }
+    // 2. check content column - yahi aapke supabase me hai
+    else if (page.content) {
       try {
         const parsed = typeof page.content === 'string' ? JSON.parse(page.content) : page.content;
-        if (parsed?.content?.length > 0) {
-          loadedData = parsed;
-        }
-      } catch (e) {}
+        if (Array.isArray(parsed)) blocks = parsed;
+        else if (Array.isArray(parsed?.blocks)) blocks = parsed.blocks; // yahi format hai {"blocks":[...]}
+        else if (Array.isArray(parsed?.content)) blocks = parsed.content;
+      } catch {}
+    }
+    // 3. check blocks column
+    else if (Array.isArray(page.blocks) && page.blocks.length > 0) {
+      blocks = page.blocks;
+    }
+    // 4. check data column
+    else if (Array.isArray(page.data) && page.data.length > 0) {
+      blocks = page.data;
     }
   }
+
+  const loadedData: PageData = {
+    version: 1,
+    content: blocks,
+  };
 
   return (
     <Editor
