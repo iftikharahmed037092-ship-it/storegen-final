@@ -1,34 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const storeId = body.store_id || body.storeId
-    const content = body.content || body.pagedata?.content || []
+    const { storeId, pageData } = await req.json();
+    if (!storeId || !pageData?.content) {
+      return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    }
+    
+    const blocksArray = pageData.content;
+    if (!Array.isArray(blocksArray) || blocksArray.length === 0) {
+      return NextResponse.json({ error: "Cannot save empty design" }, { status: 400 });
+    }
 
-    if (!storeId) return NextResponse.json({ error: 'store_id missing' }, { status: 400 })
+    const supabase = supabaseAdmin();
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    const { error } = await supabase.from('pages').upsert({
+    // Save in all columns to fix old structure
+    const payload = {
       store_id: storeId,
-      slug: 'home',
-      content: content,
-      blocks: content,
-      is_published: true
-    }, { onConflict: 'store_id,slug' })
+      slug: "home",
+      title: "Home",
+      content: { blocks: blocksArray },
+      blocks: blocksArray,
+      data: blocksArray,
+      is_published: true,
+      published: true,
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) throw error
-    return NextResponse.json({ success: true })
+    const { error } = await supabase
+      .from("pages")
+      .upsert(payload, { onConflict: "store_id,slug" });
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
-}
-
-export async function GET() {
-  return NextResponse.json({ ok: true })
 }
