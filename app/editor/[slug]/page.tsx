@@ -22,7 +22,7 @@ export default async function EditorPage({
     notFound();
   }
 
-  const page =
+  const page: any =
     await getPageByStoreId(store.id);
 
   const defaultData: PageData = {
@@ -30,14 +30,26 @@ export default async function EditorPage({
     content: []
   };
 
+  // page_data یا content دونوں میں سے جو بھی ملے اسے لوڈ کرو
+  let loadedData: PageData = defaultData;
+  if (page) {
+    if (page.page_data && typeof page.page_data === 'object' && page.page_data.content?.length > 0) {
+      loadedData = page.page_data as PageData;
+    } else if (page.content) {
+      try {
+        const parsed = typeof page.content === 'string' ? JSON.parse(page.content) : page.content;
+        if (parsed?.content?.length > 0) {
+          loadedData = parsed;
+        }
+      } catch (e) {}
+    }
+  }
+
   return (
     <Editor
       storeId={store.id}
       storeName={store.store_name}
-      initialData={
-        page?.page_data ||
-        defaultData
-      }
+      initialData={loadedData}
     />
   );
 }
