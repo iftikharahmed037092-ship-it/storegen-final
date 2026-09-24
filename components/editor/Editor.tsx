@@ -17,12 +17,19 @@ interface Props {
 const blockTypes: BlockType[] = ["Header", "Hero", "Products", "Features", "WhatsAppOrder", "Contact", "Footer"];
 
 export default function Editor({ storeId, storeName, initialData }: Props) {
-  const [blocks, setBlocks] = useState<EditorBlock[]>(initialData.content || []);
+  const [blocks, setBlocks] = useState<EditorBlock[]>(initialData?.content || []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [device, setDevice] = useState<DeviceType>("desktop");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [storeProducts, setStoreProducts] = useState<{ id: string; name: string; price: number; image_url: string | null }[]>([]);
+
+  // FIX 1: Ye sab se important fix hai, ab reload par design empty nahi hoga
+  useEffect(() => {
+    if (initialData?.content && initialData.content.length > 0) {
+      setBlocks(initialData.content);
+    }
+  }, [initialData]);
 
   useEffect(() => {
     async function loadStoreProducts() {
@@ -82,6 +89,11 @@ export default function Editor({ storeId, storeName, initialData }: Props) {
   }
 
   async function saveDesign() {
+    // FIX 2: Khali design ko save hone se rokna taake purana design delete na ho
+    if (blocks.length === 0) {
+      setMessage("Add at least one block before saving.");
+      return;
+    }
     setSaving(true); setMessage("");
     try {
       const response = await fetch("/api/pages/save", {
@@ -103,7 +115,7 @@ export default function Editor({ storeId, storeName, initialData }: Props) {
         <div><strong>Editor — {storeName}</strong></div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <DeviceSwitcher device={device} onChange={setDevice} />
-          {message && <span style={{ fontSize: "13px" }}>{message}</span>}
+          {message && <span style={{ fontSize: "13px", color: message.includes("successfully")? "#16a34a" : "#dc2626", fontWeight: 600 }}>{message}</span>}
           <button onClick={saveDesign} disabled={saving} style={primaryButton}>{saving? "Saving..." : "Save Design"}</button>
         </div>
       </header>
