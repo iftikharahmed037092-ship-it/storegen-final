@@ -37,7 +37,6 @@ export async function POST(request: Request) {
 
     const product = await createProduct({
       store_id: storeId,
-      category_id: body.category_id ?? null,
       name,
       price,
       old_price: body.old_price ?? null,
