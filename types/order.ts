@@ -15,7 +15,7 @@ export interface Order {
 
   customer_name: string;
   customer_phone: string;
-  customer_address: string;
+  shipping_address: string;
   customer_city: string;
 
   payment_method: PaymentMethod;
