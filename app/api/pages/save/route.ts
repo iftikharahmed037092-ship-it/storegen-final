@@ -1,52 +1,146 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { savePage } from "@/lib/pages";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
-    // موبائل سے جو بھی آ رہا ہے، سب پکڑ لو
-    const storeId = body.storeId || body.store_id;
-    let blocks = body.pageData || body.page_data || body.content || body.blocks || body.data || [];
 
-    // اگر pageData {content: [...]} کی شکل میں ہے
-    if (blocks && typeof blocks === 'object' && !Array.isArray(blocks)) {
-      if (Array.isArray(blocks.content)) blocks = blocks.content;
-      else if (Array.isArray(blocks.blocks)) blocks = blocks.blocks;
-    }
+    const storeId = String(
+      body.storeId ??
+      body.store_id ??
+      ""
+    ).trim();
 
     if (!storeId) {
-      return NextResponse.json({ error: "storeId missing" }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "storeId is required.",
+        },
+        {
+          status: 400,
+        }
+      );
     }
-    if (!Array.isArray(blocks) || blocks.length === 0) {
-      return NextResponse.json({ error: "Empty blocks received" }, { status: 400 });
+
+    /*
+     * Editor normally sends:
+     *
+     * {
+     *   storeId,
+     *   pageData: {
+     *     version: 1,
+     *     content: [...]
+     *   }
+     * }
+     */
+
+    let pageData =
+      body.pageData ??
+      body.page_data ??
+      null;
+
+    /*
+     * Legacy/mobile compatibility
+     */
+
+    if (!pageData) {
+      if (Array.isArray(body.content)) {
+        pageData = {
+          version: 1,
+          content: body.content,
+        };
+      } else if (Array.isArray(body.blocks)) {
+        pageData = {
+          version: 1,
+          content: body.blocks,
+        };
+      } else if (Array.isArray(body.data)) {
+        pageData = {
+          version: 1,
+          content: body.data,
+        };
+      }
     }
 
-    const finalContent = { version: 1, content: blocks };
+    /*
+     * اگر pageData direct array آ جائے
+     */
 
-    // دونوں کالم میں ایک ہی چیز سیو کریں گے تاکہ Editor کو مل جائے
-    const { error } = await supabase
-      .from("pages")
-      .upsert({
-        store_id: storeId,
-        slug: "home",
-        title: "Home",
-        content: finalContent,
-        page_data: finalContent, 
-        blocks: blocks,
-        data: blocks,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "store_id,slug" });
+    if (Array.isArray(pageData)) {
+      pageData = {
+        version: 1,
+        content: pageData,
+      };
+    }
 
-    if (error) throw error;
+    /*
+     * اگر nested format ہو
+     */
 
-    return NextResponse.json({ success: true, savedCount: blocks.length });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    if (
+      pageData &&
+      typeof pageData === "object" &&
+      !Array.isArray(pageData)
+    ) {
+      if (
+        !Array.isArray(pageData.content) &&
+        Array.isArray(pageData.blocks)
+      ) {
+        pageData = {
+          version: 1,
+          content: pageData.blocks,
+        };
+      }
+    }
+
+    const blocks =
+      pageData?.content;
+
+    if (
+      !Array.isArray(blocks) ||
+      blocks.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "No editor blocks were received.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const savedPage = await savePage(
+      storeId,
+      {
+        version: 1,
+        content: blocks,
+      }
+    );
+
+    return NextResponse.json({
+      success: true,
+      savedCount: blocks.length,
+      pageId: savedPage.id,
+      pageData: savedPage.page_data,
+    });
+  } catch (error) {
+    console.error(
+      "PAGE_SAVE_ERROR:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to save page.",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }
