@@ -19,6 +19,94 @@ interface RouteProps {
   }>;
 }
 
+
+/*
+ * GET
+ *
+ * Order Success page اور دوسرے customer pages
+ * اس endpoint سے order details لے سکتے ہیں۔
+ */
+
+export async function GET(
+  request: Request,
+  { params }: RouteProps
+) {
+  try {
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        {
+          error: "Order ID is required."
+        },
+        {
+          status: 400
+        }
+      );
+    }
+
+    const {
+      data: order,
+      error
+    } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json(
+        {
+          error: error.message
+        },
+        {
+          status: 400
+        }
+      );
+    }
+
+    if (!order) {
+      return NextResponse.json(
+        {
+          error: "Order not found."
+        },
+        {
+          status: 404
+        }
+      );
+    }
+
+    return NextResponse.json({
+      order
+    });
+
+  } catch (error) {
+    console.error(
+      "Order GET error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to get order."
+      },
+      {
+        status: 500
+      }
+    );
+  }
+}
+
+
+/*
+ * PATCH
+ *
+ * Admin order status update
+ */
+
 export async function PATCH(
   request: Request,
   { params }: RouteProps
