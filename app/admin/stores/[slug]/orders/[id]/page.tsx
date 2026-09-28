@@ -152,7 +152,7 @@ export default async function AdminOrderPage({
 
           <p>
             <strong>Address:</strong>{" "}
-            {order.customer_address}
+            {order.shipping_address}
           </p>
         </section>
 
