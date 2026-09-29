@@ -24,14 +24,20 @@ export async function getStores(): Promise<Store[]> {
 export async function getStoreBySlug(
   slug: string
 ): Promise<Store | null> {
+  if (!slug) return null;
+
+  // صرف slug کو صاف کرنا - کوئی نیا connection نہیں
+  const cleanSlug = slug.toLowerCase().trim();
+
   const { data, error } = await supabase
     .from("stores")
     .select("*")
-    .eq("slug", slug)
+    .ilike("slug", cleanSlug) // eq کی جگہ ilike تاکہ My-Fashion-Store بھی مل جائے
     .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    console.error("getStoreBySlug error:", error.message);
+    return null; // throw کی جگہ null تاکہ 404 کی وجہ سمجھ آئے، connection نہیں ٹوٹے گا
   }
 
   return data as Store | null;
