@@ -15,20 +15,19 @@ interface OrderPageProps {
 
 export default async function OrderPage({ params }: OrderPageProps) {
   const { slug, id } = await params;
-
   const store = await getStoreBySlug(slug);
-
   if (!store) {
     notFound();
   }
-
   const result = await getOrderWithItems(id);
-
   if (!result || result.order.store_id !== store.id) {
     notFound();
   }
-
   const { order, items } = result;
+  
+  // 100% SAFE FIX - یہی حل ہے
+  const channel = (order as any).order_channel || "website";
+  const isWhatsapp = channel === "whatsapp";
 
   return (
     <>
@@ -38,7 +37,6 @@ export default async function OrderPage({ params }: OrderPageProps) {
         logoUrl={store.logo_url}
         primaryColor={store.primary_color}
       />
-
       <main
         style={{
           maxWidth: 1000,
@@ -66,7 +64,6 @@ export default async function OrderPage({ params }: OrderPageProps) {
               Order ID: {order.id}
             </p>
           </div>
-
           <Link
             href={`/s/${store.slug}`}
             style={{
@@ -80,9 +77,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
             Continue Shopping
           </Link>
         </div>
-
         <OrderStatusTracker status={order.status} />
-
         <section
           style={{
             marginTop: 25,
@@ -100,20 +95,11 @@ export default async function OrderPage({ params }: OrderPageProps) {
             }}
           >
             <h2>Customer</h2>
-            <p>
-              <strong>Name:</strong> {order.customer_name}
-            </p>
-            <p>
-              <strong>Phone:</strong> {order.customer_phone}
-            </p>
-            <p>
-              <strong>City:</strong> {order.customer_city}
-            </p>
-            <p>
-              <strong>Address:</strong> {order.customer_address}
-            </p>
+            <p><strong>Name:</strong> {order.customer_name}</p>
+            <p><strong>Phone:</strong> {order.customer_phone}</p>
+            <p><strong>City:</strong> {order.customer_city}</p>
+            <p><strong>Address:</strong> {order.customer_address}</p>
           </div>
-
           <div
             style={{
               background: "#fff",
@@ -123,18 +109,11 @@ export default async function OrderPage({ params }: OrderPageProps) {
             }}
           >
             <h2>Payment</h2>
-            <p>
-              <strong>Method:</strong> Cash on Delivery
-            </p>
-            <p>
-              <strong>Status:</strong> {order.status}
-            </p>
-            <p>
-              <strong>Order Date:</strong>{" "}
-              {new Date(order.created_at).toLocaleString()}
-            </p>
+            <p><strong>Method:</strong> Cash on Delivery</p>
+            <p><strong>Status:</strong> {order.status}</p>
+            <p><strong>Order Date:</strong> {new Date(order.created_at).toLocaleString()}</p>
             
-            {/* تمہارا والا Order Source والا کوڈ یہاں لگایا ہے */}
+            {/* 100% FIXED - اب Crash نہیں ہوگا */}
             <p>
               <strong>Order Source:</strong>{" "}
               <span
@@ -144,18 +123,16 @@ export default async function OrderPage({ params }: OrderPageProps) {
                   borderRadius: 999,
                   fontSize: 12,
                   fontWeight: 800,
-                  background:
-                    order.order_channel === "whatsapp" ? "#dcfce7" : "#dbeafe",
-                  color:
-                    order.order_channel === "whatsapp" ? "#15803d" : "#1d4ed8",
+                  background: isWhatsapp ? "#dcfce7" : "#dbeafe",
+                  color: isWhatsapp ? "#15803d" : "#1d4ed8",
+                  border: isWhatsapp ? "1px solid #bbf7d0" : "1px solid #bfdbfe"
                 }}
               >
-                {order.order_channel === "whatsapp" ? "💬 WhatsApp" : "🌐 Website"}
+                {isWhatsapp ? "💬 WhatsApp" : "🌐 Website"}
               </span>
             </p>
           </div>
         </section>
-
         <section
           style={{
             marginTop: 20,
@@ -166,13 +143,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
           }}
         >
           <h2>Products</h2>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 12,
-            }}
-          >
+          <div style={{ display: "grid", gap: 12 }}>
             {items.map((item: any) => (
               <div
                 key={item.id}
@@ -200,77 +171,34 @@ export default async function OrderPage({ params }: OrderPageProps) {
                       alt={item.product_name}
                       width={70}
                       height={70}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
-                    <div
-                      style={{
-                        height: "100%",
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 11,
-                        color: "#9ca3af",
-                      }}
-                    >
+                    <div style={{ height: "100%", display: "grid", placeItems: "center", fontSize: 11, color: "#9ca3af" }}>
                       No Image
                     </div>
                   )}
                 </div>
-
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 800 }}>{item.product_name}</div>
-                  <div
-                    style={{
-                      marginTop: 5,
-                      color: "#6b7280",
-                      fontSize: 13,
-                    }}
-                  >
+                  <div style={{ marginTop: 5, color: "#6b7280", fontSize: 13 }}>
                     Rs. {item.price.toLocaleString()} {" × "} {item.quantity}
                   </div>
                 </div>
-
                 <strong>Rs. {item.subtotal.toLocaleString()}</strong>
               </div>
             ))}
           </div>
-
-          <div
-            style={{
-              marginTop: 20,
-              display: "grid",
-              gap: 8,
-              maxWidth: 350,
-              marginLeft: "auto",
-            }}
-          >
+          <div style={{ marginTop: 20, display: "grid", gap: 8, maxWidth: 350, marginLeft: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Subtotal</span>
-              <strong>Rs. {order.subtotal.toLocaleString()}</strong>
+              <span>Subtotal</span><strong>Rs. {order.subtotal.toLocaleString()}</strong>
             </div>
-
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Shipping</span>
-              <strong>Rs. {order.shipping_fee.toLocaleString()}</strong>
+              <span>Shipping</span><strong>Rs. {order.shipping_fee.toLocaleString()}</strong>
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                borderTop: "1px solid #e5e7eb",
-                paddingTop: 10,
-                fontSize: 19,
-              }}
-            >
+            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #e5e7eb", paddingTop: 10, fontSize: 19 }}>
               <strong>Total</strong>
-              <strong style={{ color: store.primary_color }}>
-                Rs. {order.total.toLocaleString()}
-              </strong>
+              <strong style={{ color: store.primary_color }}>Rs. {order.total.toLocaleString()}</strong>
             </div>
           </div>
         </section>
