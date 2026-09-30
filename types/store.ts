@@ -10,6 +10,12 @@ export type TemplateType =
   | "modern"
   | "minimal";
 
+export type DomainStatus =
+  | "none"
+  | "pending"
+  | "verified"
+  | "failed";
+
 export interface SocialLinks {
   facebook?: string;
   instagram?: string;
@@ -21,7 +27,13 @@ export interface Store {
   id: string;
   slug: string;
   store_name: string;
+  
   custom_domain: string | null;
+  domain_status: DomainStatus;
+  domain_verified: boolean;
+  domain_verified_at: string | null;
+  domain_last_checked_at: string | null;
+
   logo_url: string | null;
   primary_color: string;
   whatsapp_number: string | null;
@@ -42,7 +54,7 @@ export interface Store {
 export interface CreateStoreInput {
   slug: string;
   store_name: string;
-  custom_domain?: string;
+  custom_domain?: string | null;
   logo_url?: string;
   primary_color?: string;
   whatsapp_number?: string;
@@ -62,6 +74,12 @@ export interface UpdateStoreInput {
   slug?: string;
   store_name?: string;
   custom_domain?: string | null;
+  
+  domain_status?: DomainStatus;
+  domain_verified?: boolean;
+  domain_verified_at?: string | null;
+  domain_last_checked_at?: string | null;
+
   logo_url?: string | null;
   primary_color?: string;
   whatsapp_number?: string | null;
