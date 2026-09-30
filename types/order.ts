@@ -6,8 +6,11 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
-export type PaymentMethod =
-  | "cod";
+export type PaymentMethod = "cod";
+
+export type OrderChannel =
+  | "website"
+  | "whatsapp";
 
 export interface Order {
   id: string;
@@ -19,6 +22,8 @@ export interface Order {
   customer_city: string;
 
   payment_method: PaymentMethod;
+  order_channel: OrderChannel;
+
   status: OrderStatus;
 
   subtotal: number;
