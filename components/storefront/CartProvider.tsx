@@ -33,6 +33,10 @@ interface CartContextValue {
     quantity: number
   ) => void;
 
+  buyNow: (
+  product: Product
+) => void;
+
   clearCart: () => void;
 
   totalItems: number;
