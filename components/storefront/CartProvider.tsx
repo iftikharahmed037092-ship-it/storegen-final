@@ -19,38 +19,18 @@ export interface CartItem {
 
 interface CartContextValue {
   items: CartItem[];
-
-  addToCart: (
-    product: Product
-  ) => void;
-
-  removeFromCart: (
-    productId: string
-  ) => void;
-
-  updateQuantity: (
-    productId: string,
-    quantity: number
-  ) => void;
-
-  buyNow: (
-  product: Product
-) => void;
-
+  addToCart: (product: Product) => void;
+  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
+  buyNow: (product: Product) => void;
   clearCart: () => void;
-
   totalItems: number;
   totalPrice: number;
 }
 
-const CartContext =
-  createContext<
-    CartContextValue | undefined
-  >(undefined);
+const CartContext = createContext<CartContextValue | undefined>(undefined);
 
-function storageKey(
-  storeId: string
-) {
+function storageKey(storeId: string) {
   return `store-cart-${storeId}`;
 }
 
@@ -61,20 +41,13 @@ export function CartProvider({
   storeId: string;
   children: React.ReactNode;
 }) {
-  const [items, setItems] =
-    useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
     try {
-      const saved =
-        localStorage.getItem(
-          storageKey(storeId)
-        );
-
+      const saved = localStorage.getItem(storageKey(storeId));
       if (saved) {
-        setItems(
-          JSON.parse(saved)
-        );
+        setItems(JSON.parse(saved));
       }
     } catch {
       setItems([]);
@@ -82,153 +55,89 @@ export function CartProvider({
   }, [storeId]);
 
   useEffect(() => {
-    localStorage.setItem(
-      storageKey(storeId),
-      JSON.stringify(items)
-    );
+    localStorage.setItem(storageKey(storeId), JSON.stringify(items));
   }, [items, storeId]);
 
-  function addToCart(
-    product: Product
-  ) {
+  function addToCart(product: Product) {
     setItems(current => {
-      const existing =
-        current.find(
-          item =>
-            item.product.id ===
-            product.id
-        );
-
+      const existing = current.find(item => item.product.id === product.id);
       if (existing) {
-        return current.map(
-          item =>
-            item.product.id ===
-            product.id
-              ? {
-                  ...item,
-                  quantity:
-                    Math.min(
-                      item.quantity + 1,
-                      product.stock
-                    )
-                }
-              : item
+        return current.map(item =>
+          item.product.id === product.id
+            ? {
+                ...item,
+                quantity: Math.min(item.quantity + 1, product.stock)
+              }
+            : item
         );
       }
-
-      return [
-        ...current,
-        {
-          product,
-          quantity: 1
-        }
-      ];
+      return [...current, { product, quantity: 1 }];
     });
   }
 
-  function removeFromCart(
-    productId: string
-  ) {
+  function removeFromCart(productId: string) {
+    setItems(current => current.filter(item => item.product.id !== productId));
+  }
+
+  function updateQuantity(productId: string, quantity: number) {
     setItems(current =>
-      current.filter(
-        item =>
-          item.product.id !==
-          productId
-      )
+      current.map(item => {
+        if (item.product.id !== productId) return item;
+        const safeQuantity = Math.max(1, Math.min(quantity, item.product.stock));
+        return { ...item, quantity: safeQuantity };
+      })
     );
   }
 
-  function updateQuantity(
-    productId: string,
-    quantity: number
-  ) {
-    setItems(current =>
-      current
-        .map(item => {
-          if (
-            item.product.id !==
-            productId
-          ) {
-            return item;
-          }
+  // --- YEH NAYA FUNCTION YAHAN LAGAYA HAI ---
+  function buyNow(product: Product) {
+    const newItems: CartItem[] = [
+      {
+        product,
+        quantity: 1
+      }
+    ];
 
-          const safeQuantity =
-            Math.max(
-              1,
-              Math.min(
-                quantity,
-                item.product.stock
-              )
-            );
+    setItems(newItems);
 
-          return {
-            ...item,
-            quantity:
-              safeQuantity
-          };
-        })
-    );
+    try {
+      localStorage.setItem(storageKey(storeId), JSON.stringify(newItems));
+    } catch {}
+
+    window.location.href = `/s/${window.location.pathname.split("/")[2]}/checkout`;
   }
+  // --- END ---
 
   function clearCart() {
     setItems([]);
   }
 
-  const totalItems =
-    items.reduce(
-      (sum, item) =>
-        sum + item.quantity,
-      0
-    );
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-  const totalPrice =
-    items.reduce(
-      (sum, item) =>
-        sum +
-        item.product.price *
-          item.quantity,
-      0
-    );
-
-  const value =
-    useMemo(
-      () => ({
-        items,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        totalItems,
-        totalPrice
-      }),
-      [
-        items,
-        totalItems,
-        totalPrice
-      ]
-    );
-
-  return (
-    <CartContext.Provider
-      value={value}
-    >
-      {children}
-    </CartContext.Provider>
+  const value = useMemo(
+    () => ({
+      items,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      buyNow,
+      clearCart,
+      totalItems,
+      totalPrice
+    }),
+    [items, totalItems, totalPrice]
   );
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCart() {
-  const context =
-    useContext(
-      CartContext
-    );
-
+  const context = useContext(CartContext);
   if (!context) {
-    throw new Error(
-      "useCart must be used inside CartProvider"
-    );
+    throw new Error("useCart must be used inside CartProvider");
   }
-
   return context;
 }
+
 export default CartProvider;
