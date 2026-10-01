@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Store } from "@/types/store";
 import { getDomainStatusLabel } from "@/lib/domains";
+import DomainVerification from "./DomainVerification";
 
 interface StoreSettingsProps {
   store: Store;
@@ -18,7 +19,7 @@ export default function StoreSettings({ store }: StoreSettingsProps) {
   const [logoUrl, setLogoUrl] = useState(store.logo_url || "");
   const [primaryColor, setPrimaryColor] = useState(store.primary_color || "#000000");
   const [whatsappNumber, setWhatsappNumber] = useState(store.whatsapp_number || "");
-  const [shippingFee, setShippingFee] = useState(String(store.shipping_fee ?? 0));
+  const [shippingFee, setShippingFee] = useState(String(store.shipping_fee?? 0));
   const [isActive, setIsActive] = useState(store.is_active);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -51,7 +52,7 @@ export default function StoreSettings({ store }: StoreSettingsProps) {
       setMessage("Store settings saved successfully.");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save settings.");
+      setMessage(error instanceof Error? error.message : "Unable to save settings.");
     } finally {
       setSaving(false);
     }
@@ -71,7 +72,7 @@ export default function StoreSettings({ store }: StoreSettingsProps) {
       router.push("/admin/stores");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to delete store.");
+      setMessage(error instanceof Error? error.message : "Unable to delete store.");
       setDeleting(false);
     }
   }
@@ -90,24 +91,23 @@ export default function StoreSettings({ store }: StoreSettingsProps) {
             placeholder="example.com"
           />
           <p style={{ margin: "6px 0 0", fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
-            Example: yourstore.com
+            Example: yourstore.com — add domain without https://
           </p>
 
-          {/* Domain Status Badge - PART 11 STEP 1 */}
           <div
             style={{
               marginTop: 10,
               padding: "10px 12px",
               borderRadius: 10,
               background:
-                store.domain_status === "verified" ? "#dcfce7"
-                : store.domain_status === "pending" ? "#fef3c7"
-                : store.domain_status === "failed" ? "#fee2e2"
+                store.domain_status === "verified"? "#dcfce7"
+                : store.domain_status === "pending"? "#fef3c7"
+                : store.domain_status === "failed"? "#fee2e2"
                 : "#f3f4f6",
               color:
-                store.domain_status === "verified" ? "#166534"
-                : store.domain_status === "pending" ? "#92400e"
-                : store.domain_status === "failed" ? "#991b1b"
+                store.domain_status === "verified"? "#166534"
+                : store.domain_status === "pending"? "#92400e"
+                : store.domain_status === "failed"? "#991b1b"
                 : "#374151",
               fontSize: 13,
               fontWeight: 800
@@ -120,6 +120,13 @@ export default function StoreSettings({ store }: StoreSettingsProps) {
               </span>
             )}
           </div>
+
+          {/* STEP 2 - VERIFICATION COMPONENT */}
+          <DomainVerification
+            storeId={store.id}
+            domain={store.custom_domain}
+            status={store.domain_status}
+          />
         </div>
 
         <Field label="Logo URL" value={logoUrl} onChange={setLogoUrl} placeholder="https://..." />
@@ -145,7 +152,7 @@ export default function StoreSettings({ store }: StoreSettingsProps) {
         </label>
 
         <button type="submit" disabled={saving} style={{ width: "fit-content", padding: "12px 20px", border: "none", borderRadius: 9, background: "#2563eb", color: "#fff", fontWeight: 800 }}>
-          {saving ? "Saving..." : "Save Store Settings"}
+          {saving? "Saving..." : "Save Store Settings"}
         </button>
 
         {message && (
@@ -159,7 +166,7 @@ export default function StoreSettings({ store }: StoreSettingsProps) {
         <h2>Danger Zone</h2>
         <p style={{ color: "#7f1d1d" }}>Permanently delete this store and its related data.</p>
         <button type="button" onClick={deleteStore} disabled={deleting} style={{ padding: "11px 18px", border: "none", borderRadius: 8, background: "#dc2626", color: "#fff", fontWeight: 800 }}>
-          {deleting ? "Deleting..." : "Delete Store"}
+          {deleting? "Deleting..." : "Delete Store"}
         </button>
       </div>
     </div>
