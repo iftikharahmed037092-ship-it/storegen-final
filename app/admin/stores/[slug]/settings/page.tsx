@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  getStoreBySlug
-} from "@/lib/stores";
-
-import StoreSettings
-  from "@/components/admin/StoreSettings";
-
+import { getStoreBySlug } from "@/lib/stores";
+import StoreSettings from "@/components/admin/StoreSettings";
+import DomainManager from "@/components/admin/DomainManager";
 
 interface StoreSettingsPageProps {
   params: Promise<{
@@ -15,25 +11,18 @@ interface StoreSettingsPageProps {
   }>;
 }
 
-
 export default async function StoreSettingsPage({
   params
 }: StoreSettingsPageProps) {
-
-  const { slug } =
-    await params;
-
-  const store =
-    await getStoreBySlug(slug);
+  const { slug } = await params;
+  const store = await getStoreBySlug(slug);
 
   if (!store) {
     notFound();
   }
 
-
   return (
     <div>
-
       <Link
         href={`/admin/stores/${store.slug}`}
         style={{
@@ -44,41 +33,38 @@ export default async function StoreSettingsPage({
         ← Back to Store
       </Link>
 
+      <h1>Store Settings</h1>
 
-      <h1>
-        Store Settings
-      </h1>
-
-      <p
-        style={{
-          color: "#6b7280"
-        }}
-      >
-        Manage settings for{" "}
-        <strong>
-          {store.store_name}
-        </strong>
+      <p style={{ color: "#6b7280" }}>
+        Manage settings for <strong>{store.store_name}</strong>
       </p>
-
 
       <div
         style={{
           marginTop: 25,
           maxWidth: 800,
           background: "#fff",
-          border:
-            "1px solid #e5e7eb",
+          border: "1px solid #e5e7eb",
           borderRadius: 14,
           padding: 25
         }}
       >
-
-        <StoreSettings
-          store={store}
-        />
-
+        <StoreSettings store={store} />
       </div>
 
+      {/* --- Part 11 Step 5: Domain Manager --- */}
+      <div style={{ maxWidth: 800 }}>
+        <DomainManager
+          store={{
+            id: store.id,
+            slug: store.slug,
+            custom_domain: store.custom_domain,
+            domain_status: (store.domain_status as any) || "none",
+            domain_verified: store.domain_verified || false,
+            domain_verified_at: store.domain_verified_at || null
+          }}
+        />
+      </div>
     </div>
   );
 }
