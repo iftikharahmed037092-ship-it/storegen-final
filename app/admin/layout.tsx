@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getAuthenticatedAdmin } from "@/lib/server-admin-auth";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -7,9 +10,15 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children
 }: AdminLayoutProps) {
+  // STEP 9: Protection - اگر Master Admin نہیں تو Login پر بھیج دو
+  const admin = await getAuthenticatedAdmin();
+  if (!admin) {
+    redirect("/login?next=/admin");
+  }
+
   return (
     <div
       style={{
@@ -52,7 +61,8 @@ export default function AdminLayout({
             style={{
               display: "flex",
               gap: 8,
-              flexWrap: "wrap"
+              flexWrap: "wrap",
+              alignItems: "center"
             }}
           >
             <AdminLink
@@ -84,6 +94,14 @@ export default function AdminLayout({
               href="/admin/analytics"
               label="Analytics"
             />
+
+            {/* NEW: Creators والا Link */}
+            <AdminLink
+              href="/admin/creators"
+              label="Creators ⭐"
+            />
+
+            <LogoutButton />
           </nav>
         </div>
       </header>
