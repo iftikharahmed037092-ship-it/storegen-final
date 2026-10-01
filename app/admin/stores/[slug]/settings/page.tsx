@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getStoreBySlug } from "@/lib/stores";
 import StoreSettings from "@/components/admin/StoreSettings";
 import DomainManager from "@/components/admin/DomainManager";
+import DomainHealth from "@/components/admin/DomainHealth";
 
 interface StoreSettingsPageProps {
   params: Promise<{
@@ -52,7 +53,7 @@ export default async function StoreSettingsPage({
         <StoreSettings store={store} />
       </div>
 
-      {/* --- Part 11 Step 5: Domain Manager --- */}
+      {/* --- Part 11 Step 5 & 6: Domain Manager + Health --- */}
       <div style={{ maxWidth: 800 }}>
         <DomainManager
           store={{
@@ -63,6 +64,10 @@ export default async function StoreSettingsPage({
             domain_verified: store.domain_verified || false,
             domain_verified_at: store.domain_verified_at || null
           }}
+        />
+        <DomainHealth
+          storeId={store.id}
+          domain={store.custom_domain}
         />
       </div>
     </div>
