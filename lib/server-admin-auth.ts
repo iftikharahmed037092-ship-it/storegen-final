@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface AdminUser {
   id: string;
@@ -9,55 +9,28 @@ interface AdminUser {
 }
 
 export async function getAuthenticatedAdmin(): Promise<AdminUser | null> {
-  const cookieStore = await cookies();
-
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return null;
-  }
-
-  const supabaseServer = createClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          }
-        }
-      }
-    }
-  );
+  const supabase =
+    await createSupabaseServerClient();
 
   const {
-    data: {
-      user
-    }
-  } =
-    await supabaseServer.auth.getUser();
+    data: { user }
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return null;
   }
 
-  const { data: admin, error } =
-    await supabaseServer
-      .from("admin_users")
-      .select(
-        "id, email, role, is_active"
-      )
-      .eq("id", user.id)
-      .eq("is_active", true)
-      .maybeSingle();
+  const {
+    data: admin,
+    error
+  } = await supabaseAdmin
+    .from("admin_users")
+    .select(
+      "id, email, role, is_active"
+    )
+    .eq("id", user.id)
+    .eq("is_active", true)
+    .maybeSingle();
 
   if (error || !admin) {
     return null;
