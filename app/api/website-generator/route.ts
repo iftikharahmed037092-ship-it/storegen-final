@@ -6,6 +6,11 @@ import type {
   TemplateType
 } from "@/types/store";
 
+// ===== STEP 20 - NAYE IMPORTS =====
+import { getAuthenticatedAdmin } from "@/lib/server-admin-auth";
+import { getAuthenticatedCreator } from "@/lib/creator-auth";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
 const businessTypes: BusinessType[] = [
   "general",
   "garments",
@@ -30,6 +35,20 @@ function isValidSlug(slug: string) {
 
 export async function POST(request: Request) {
   try {
+    // ===== STEP 20 - AUTH CHECK START =====
+    const admin = await getAuthenticatedAdmin();
+    const creator = await getAuthenticatedCreator();
+
+    if (!admin && !creator) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized. Please login first."
+        },
+        { status: 401 }
+      );
+    }
+    // ===== AUTH CHECK KHATAM =====
+
     const body = await request.json();
 
     const store_name = cleanString(body.store_name);
@@ -64,96 +83,32 @@ export async function POST(request: Request) {
           }
         : {};
 
-    // Store name
     if (!store_name) {
-      return NextResponse.json(
-        {
-          error: "Store name is required."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Store name is required." }, { status: 400 });
     }
-
     if (store_name.length < 2) {
-      return NextResponse.json(
-        {
-          error: "Store name must contain at least 2 characters."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Store name must contain at least 2 characters." }, { status: 400 });
     }
-
-    // Slug
     if (!slug) {
-      return NextResponse.json(
-        {
-          error: "Store slug is required."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Store slug is required." }, { status: 400 });
     }
-
     if (!isValidSlug(slug)) {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid store slug. Use lowercase letters, numbers and hyphens only."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid store slug. Use lowercase letters, numbers and hyphens only." }, { status: 400 });
     }
-
     if (slug.length < 2 || slug.length > 60) {
-      return NextResponse.json(
-        {
-          error:
-            "Store slug must be between 2 and 60 characters."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Store slug must be between 2 and 60 characters." }, { status: 400 });
     }
-
-    // Business type
     if (!businessTypes.includes(business_type)) {
-      return NextResponse.json(
-        {
-          error: "Invalid business type."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid business type." }, { status: 400 });
     }
-
-    // Template
     if (!templateTypes.includes(template_type)) {
-      return NextResponse.json(
-        {
-          error: "Invalid website template."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid website template." }, { status: 400 });
     }
-
-    // Shipping
     if (!Number.isFinite(shipping_fee) || shipping_fee < 0) {
-      return NextResponse.json(
-        {
-          error: "Shipping fee must be 0 or greater."
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Shipping fee must be 0 or greater." }, { status: 400 });
     }
-
-    // Email
-    if (
-      contact_email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email)
-    ) {
-      return NextResponse.json(
-        {
-          error: "Please enter a valid contact email."
-        },
-        { status: 400 }
-      );
+    if (contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email)) {
+      return NextResponse.json({ error: "Please enter a valid contact email." }, { status: 400 });
     }
 
     const generated = await generateWebsite({
@@ -165,16 +120,38 @@ export async function POST(request: Request) {
       whatsapp_number: whatsapp_number || null,
       shipping_fee,
       is_active: true,
-
       business_type,
       template_type,
-
       contact_phone: contact_phone || null,
       contact_email: contact_email || null,
       address: address || null,
-
       social_links
     });
+
+    // ===== STEP 20 - CREATOR OWNERSHIP LINK START =====
+    // generateWebsite se jo store bana hai uska id nikalo
+    // Tumhare system me generated.slug, generated.id, generated.storeId me se koi ek hoga
+    const newStoreId = (generated as any)?.id || (generated as any)?.storeId || (generated as any)?.store_id;
+
+    if (creator && newStoreId) {
+      const { error: creatorStoreError } = await supabaseAdmin
+        .from("creator_stores")
+        .insert({
+          creator_id: creator.id,
+          store_id: newStoreId,
+        });
+
+      if (creatorStoreError) {
+        console.error("CREATOR_STORE_LINK_ERROR:", creatorStoreError);
+        return NextResponse.json(
+          {
+            error: "Website was created but creator ownership could not be saved: " + creatorStoreError.message,
+          },
+          { status: 500 }
+        );
+      }
+    }
+    // ===== STEP 20 KHATAM =====
 
     return NextResponse.json(
       {
@@ -191,7 +168,6 @@ export async function POST(request: Request) {
         ? error.message
         : "Website generation failed.";
 
-    // PostgreSQL/Supabase unique constraint
     if (
       message.toLowerCase().includes("duplicate") ||
       message.toLowerCase().includes("unique") ||
