@@ -35,7 +35,12 @@ function isValidSlug(slug: string) {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 }
 
-export default function WebsiteGenerator() {
+// ===== STEP 19 SYSTEM LAGA DIYA =====
+export default function WebsiteGenerator({
+  successPath = "/admin/generator/success",
+}: {
+  successPath?: string;
+}) {
   const router = useRouter();
   const [storeName, setStoreName] = useState("");
   const [slug, setSlug] = useState("");
@@ -79,7 +84,6 @@ export default function WebsiteGenerator() {
     setError("");
     setMessage("");
 
-    // ===== STEP 6 VALIDATION =====
     if (!storeName.trim()) {
       setError("Please enter the store name.");
       return;
@@ -147,7 +151,14 @@ export default function WebsiteGenerator() {
       }
 
       setMessage("Client website successfully generated.");
-      router.push(`/admin/generator/success/${finalSlug}`);
+      
+      // ===== STEP 19: YAHAN SE SYSTEM KHUD FAISLA KAREGA =====
+      if (successPath === "/creator") {
+        router.push(`/creator?created=${encodeURIComponent(finalSlug)}`);
+      } else {
+        router.push(`${successPath}/${finalSlug}`);
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
