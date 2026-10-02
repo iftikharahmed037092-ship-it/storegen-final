@@ -1,11 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase-browser";
+import {
+  FormEvent,
+  useState,
+} from "react";
+
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+
+import {
+  supabaseBrowser,
+} from "@/lib/supabase-browser";
 
 export default function LoginPage() {
   const router = useRouter();
+
+  const searchParams =
+    useSearchParams();
 
   const [email, setEmail] =
     useState("");
@@ -13,112 +26,106 @@ export default function LoginPage() {
   const [password, setPassword] =
     useState("");
 
-  const [loading, setLoading] =
-    useState(false);
-
   const [error, setError] =
     useState("");
 
-  async function handleLogin(
-    event: FormEvent
-  ) {
-    event.preventDefault();
+  const [loading, setLoading] =
+    useState(false);
 
-    if (loading) return;
+  async function submit(
+    e: FormEvent
+  ) {
+    e.preventDefault();
 
     setLoading(true);
     setError("");
 
-    const {
-      error: loginError
-    } =
+    const { error } =
       await supabaseBrowser.auth.signInWithPassword(
         {
-          email: email.trim(),
-          password
+          email:
+            email
+              .trim()
+              .toLowerCase(),
+          password,
         }
       );
 
-    if (loginError) {
-      setError(
-        loginError.message
-      );
+    if (error) {
+      setError(error.message);
       setLoading(false);
       return;
     }
 
-    const response =
+    const roleResponse =
       await fetch(
         "/api/auth/role",
         {
-          cache: "no-store"
+          cache: "no-store",
         }
       );
 
-    const result =
-      await response.json();
+    const role =
+      await roleResponse.json();
 
-    if (result.role === "master_admin") {
+    if (
+      role.role ===
+      "master_admin"
+    ) {
       router.replace("/admin");
-      router.refresh();
-      return;
+    } else if (
+      role.role === "creator"
+    ) {
+      router.replace(
+        searchParams.get("next") ||
+          "/creator"
+      );
+    } else {
+      await supabaseBrowser.auth.signOut();
+
+      setError(
+        "This account is not authorized for the Store Platform."
+      );
+
+      setLoading(false);
     }
-
-    if (result.role === "creator") {
-      router.replace("/creator");
-      router.refresh();
-      return;
-    }
-
-    await supabaseBrowser.auth.signOut();
-
-    setError(
-      "This account does not have access to this platform."
-    );
-
-    setLoading(false);
   }
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background:
-          "linear-gradient(135deg,#f0fdf4,#f8fafc)",
-        padding: 20
+        display: "grid",
+        placeItems: "center",
+        padding: 20,
+        background: "#f0fdf4",
       }}
     >
       <form
-        onSubmit={handleLogin}
+        onSubmit={submit}
         style={{
           width: "100%",
-          maxWidth: 430,
+          maxWidth: 380,
           background: "#fff",
-          padding: 30,
-          borderRadius: 20,
-          border:
-            "1px solid #e5e7eb",
+          padding: 24,
+          borderRadius: 16,
           boxShadow:
-            "0 20px 50px rgba(0,0,0,.08)"
+            "0 10px 35px rgba(0,0,0,.08)",
         }}
       >
-        <div
+        <h1
           style={{
-            fontSize: 30,
-            fontWeight: 950,
-            color: "#111827"
+            margin: 0,
+            fontSize: 24,
           }}
         >
           Store Platform
-        </div>
+        </h1>
 
         <p
           style={{
             color: "#6b7280",
-            marginTop: 8
+            marginTop: 6,
           }}
         >
           Secure account login
@@ -127,55 +134,52 @@ export default function LoginPage() {
         <label
           style={{
             display: "block",
-            marginTop: 24,
-            fontWeight: 800
+            marginTop: 18,
+            fontWeight: 700,
           }}
         >
           Email
-
-          <input
-            type="email"
-            value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-            required
-            style={inputStyle}
-          />
         </label>
+
+        <input
+          value={email}
+          onChange={(e) =>
+            setEmail(e.target.value)
+          }
+          type="email"
+          required
+          style={inputStyle}
+        />
 
         <label
           style={{
             display: "block",
-            marginTop: 16,
-            fontWeight: 800
+            marginTop: 14,
+            fontWeight: 700,
           }}
         >
           Password
-
-          <input
-            type="password"
-            value={password}
-            onChange={(e) =>
-              setPassword(
-                e.target.value
-              )
-            }
-            required
-            style={inputStyle}
-          />
         </label>
+
+        <input
+          value={password}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
+          type="password"
+          required
+          style={inputStyle}
+        />
 
         {error && (
           <div
             style={{
-              marginTop: 16,
+              marginTop: 14,
               padding: 12,
-              borderRadius: 10,
+              borderRadius: 8,
               background: "#fef2f2",
               color: "#b91c1c",
               fontSize: 14,
-              fontWeight: 700
             }}
           >
             {error}
@@ -183,29 +187,20 @@ export default function LoginPage() {
         )}
 
         <button
-          type="submit"
           disabled={loading}
           style={{
             width: "100%",
-            marginTop: 22,
-            padding: 14,
+            marginTop: 18,
+            height: 44,
             border: 0,
-            borderRadius: 10,
-            background:
-              loading
-                ? "#9ca3af"
-                : "#16a34a",
+            borderRadius: 8,
+            background: "#16a34a",
             color: "#fff",
-            fontWeight: 900,
-            fontSize: 15,
-            cursor:
-              loading
-                ? "not-allowed"
-                : "pointer"
+            fontWeight: 800,
           }}
         >
           {loading
-            ? "Signing in..."
+            ? "Logging in..."
             : "Login"}
         </button>
       </form>
@@ -215,11 +210,10 @@ export default function LoginPage() {
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  height: 46,
-  marginTop: 7,
+  height: 44,
+  marginTop: 6,
   padding: "0 12px",
-  border:
-    "1px solid #d1d5db",
-  borderRadius: 9,
-  outline: "none"
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  boxSizing: "border-box",
 };
