@@ -25,11 +25,10 @@ export async function createSupabaseServerClient() {
               }
             );
           } catch {
-            // Server Component میں cookie mutation
-            // بعض اوقات allowed نہیں ہوتی۔
+            // Middleware refreshes cookies.
           }
-        }
-      }
+        },
+      },
     }
   );
 }
