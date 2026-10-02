@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { PageData } from "@/types/page";
 import type {
   BusinessType,
@@ -18,6 +19,7 @@ import {
 export interface GenerateWebsiteInput extends CreateStoreInput {
   business_type: BusinessType;
   template_type: TemplateType;
+  creatorId?: string;
 }
 
 export interface GeneratedWebsite {
@@ -110,6 +112,20 @@ export async function generateWebsite(input: GenerateWebsiteInput): Promise<Gene
     address: input.address,
     social_links: input.social_links
   });
+
+  // --- PART 19: Creator Linkage - نیا Add کیا ہے ---
+  if (input.creatorId) {
+    const { error } = await supabaseAdmin
+     .from("creator_stores")
+     .insert({
+        creator_id: input.creatorId,
+        store_id: store.id,
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
 
   const pageData = createDefaultHomepage(
     store.store_name,
