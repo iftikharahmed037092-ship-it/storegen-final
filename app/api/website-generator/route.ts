@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
-
 import { generateWebsite } from "@/lib/website-generator";
 import type {
   BusinessType,
   TemplateType
 } from "@/types/store";
-
-// ===== STEP 20 - NAYE IMPORTS =====
 import { getAuthenticatedAdmin } from "@/lib/server-admin-auth";
 import { getAuthenticatedCreator } from "@/lib/creator-auth";
-import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const businessTypes: BusinessType[] = [
   "general",
@@ -35,9 +31,12 @@ function isValidSlug(slug: string) {
 
 export async function POST(request: Request) {
   try {
-    // ===== STEP 20 - AUTH CHECK START =====
+    // ===== PART 21 - AUTH CHECK =====
     const admin = await getAuthenticatedAdmin();
-    const creator = await getAuthenticatedCreator();
+    let creator = null;
+    if (!admin) {
+      creator = await getAuthenticatedCreator();
+    }
 
     if (!admin && !creator) {
       return NextResponse.json(
@@ -47,34 +46,24 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
-    // ===== AUTH CHECK KHATAM =====
 
     const body = await request.json();
 
     const store_name = cleanString(body.store_name);
     const slug = cleanString(body.slug).toLowerCase();
-
     const custom_domain = cleanString(body.custom_domain);
     const logo_url = cleanString(body.logo_url);
-    const primary_color =
-      cleanString(body.primary_color) || "#16a34a";
-
-    const whatsapp_number = cleanString(
-      body.whatsapp_number
-    );
-
+    const primary_color = cleanString(body.primary_color) || "#16a34a";
+    const whatsapp_number = cleanString(body.whatsapp_number);
     const contact_phone = cleanString(body.contact_phone);
     const contact_email = cleanString(body.contact_email);
     const address = cleanString(body.address);
-
     const business_type = body.business_type as BusinessType;
     const template_type = body.template_type as TemplateType;
-
     const shipping_fee = Number(body.shipping_fee ?? 0);
 
     const social_links =
-      body.social_links &&
-      typeof body.social_links === "object"
+      body.social_links && typeof body.social_links === "object"
         ? {
             facebook: cleanString(body.social_links.facebook),
             instagram: cleanString(body.social_links.instagram),
@@ -111,6 +100,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please enter a valid contact email." }, { status: 400 });
     }
 
+    // ===== PART 21 - CREATOR ID SEND =====
     const generated = await generateWebsite({
       store_name,
       slug,
@@ -125,33 +115,9 @@ export async function POST(request: Request) {
       contact_phone: contact_phone || null,
       contact_email: contact_email || null,
       address: address || null,
-      social_links
+      social_links,
+      creatorId: creator?.id, // Admin ہے تو undefined, Creator ہے تو اس کی id
     });
-
-    // ===== STEP 20 - CREATOR OWNERSHIP LINK START =====
-    // generateWebsite se jo store bana hai uska id nikalo
-    // Tumhare system me generated.slug, generated.id, generated.storeId me se koi ek hoga
-    const newStoreId = (generated as any)?.id || (generated as any)?.storeId || (generated as any)?.store_id;
-
-    if (creator && newStoreId) {
-      const { error: creatorStoreError } = await supabaseAdmin
-        .from("creator_stores")
-        .insert({
-          creator_id: creator.id,
-          store_id: newStoreId,
-        });
-
-      if (creatorStoreError) {
-        console.error("CREATOR_STORE_LINK_ERROR:", creatorStoreError);
-        return NextResponse.json(
-          {
-            error: "Website was created but creator ownership could not be saved: " + creatorStoreError.message,
-          },
-          { status: 500 }
-        );
-      }
-    }
-    // ===== STEP 20 KHATAM =====
 
     return NextResponse.json(
       {
@@ -175,8 +141,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         {
-          error:
-            "This store slug already exists. Please choose another slug."
+          error: "This store slug already exists. Please choose another slug."
         },
         { status: 409 }
       );
@@ -184,8 +149,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error:
-          "Website could not be generated. Please check your information and try again."
+        error: "Website could not be generated. Please check your information and try again."
       },
       { status: 500 }
     );
