@@ -2,64 +2,64 @@
 
 import {
   FormEvent,
-  useState
+  useState,
 } from "react";
 
-import { useParams, useRouter } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
 
-import { supabaseBrowser } from "@/lib/supabase-browser";
+import {
+  supabaseBrowser,
+} from "@/lib/supabase-browser";
 
 export default function CreatorJoinPage() {
   const params =
-    useParams<{
-      token: string;
-    }>();
+    useParams<{ token: string }>();
 
-  const router =
-    useRouter();
+  const router = useRouter();
 
-  const token =
-    params.token;
+  const [fullName, setFullName] =
+    useState("");
 
-  const [
-    name,
-    setName
-  ] = useState("");
+  const [email, setEmail] =
+    useState("");
 
-  const [
-    email,
-    setEmail
-  ] = useState("");
+  const [password, setPassword] =
+    useState("");
 
-  const [
-    password,
-    setPassword
-  ] = useState("");
+  const [confirm, setConfirm] =
+    useState("");
 
-  const [
-    loading,
-    setLoading
-  ] = useState(false);
+  const [error, setError] =
+    useState("");
 
-  const [
-    error,
-    setError
-  ] = useState("");
+  const [loading, setLoading] =
+    useState(false);
 
   async function submit(
-    event: FormEvent
+    e: FormEvent
   ) {
-    event.preventDefault();
+    e.preventDefault();
+
+    setError("");
 
     if (password.length < 8) {
       setError(
-        "Password must contain at least 8 characters."
+        "Password must be at least 8 characters."
+      );
+      return;
+    }
+
+    if (password !== confirm) {
+      setError(
+        "Passwords do not match."
       );
       return;
     }
 
     setLoading(true);
-    setError("");
 
     const response =
       await fetch(
@@ -68,132 +68,160 @@ export default function CreatorJoinPage() {
           method: "POST",
           headers: {
             "Content-Type":
-              "application/json"
+              "application/json",
           },
           body: JSON.stringify({
-            token,
+            token: params.token,
+            fullName,
             email,
-            fullName: name,
-            password
-          })
+            password,
+          }),
         }
       );
 
-    const result =
+    const data =
       await response.json();
 
     if (!response.ok) {
       setError(
-        result.error ||
-          "Unable to create creator account."
+        data.error ||
+          "Unable to create account."
       );
+
       setLoading(false);
       return;
     }
 
     const {
-      error: loginError
+      error: signInError,
     } =
       await supabaseBrowser.auth.signInWithPassword(
         {
           email:
-            email.trim().toLowerCase(),
-          password
+            email
+              .trim()
+              .toLowerCase(),
+          password,
         }
       );
 
-    if (loginError) {
+    if (signInError) {
       setError(
-        "Account created. Please login manually."
+        "Account created, but automatic login failed. Please use the Login page."
       );
 
-      router.replace(
-        "/login"
-      );
-
+      setLoading(false);
       return;
     }
 
-    router.replace(
-      "/creator"
-    );
-
-    router.refresh();
+    router.replace("/creator");
   }
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        display: "flex",
-        justifyContent:
-          "center",
-        alignItems:
-          "center",
+        display: "grid",
+        placeItems: "center",
         padding: 20,
-        background:
-          "#f0fdf4"
+        background: "#f0fdf4",
       }}
     >
       <form
         onSubmit={submit}
         style={{
           width: "100%",
-          maxWidth: 450,
+          maxWidth: 430,
           background: "#fff",
-          padding: 30,
-          borderRadius: 18,
-          border:
-            "1px solid #e5e7eb",
+          padding: 24,
+          borderRadius: 16,
           boxShadow:
-            "0 20px 50px rgba(0,0,0,.08)"
+            "0 10px 35px rgba(0,0,0,.08)",
         }}
       >
-        <h1>
-          Join Creator Team
+        <h1
+          style={{
+            margin: 0,
+          }}
+        >
+          Create Creator Account
         </h1>
 
         <p
           style={{
-            color:
-              "#6b7280"
+            color: "#6b7280",
           }}
         >
-          آپ کو website building team میں
-          شامل ہونے کی invitation ملی ہے۔
+          You were invited to build
+          websites on Store Platform.
         </p>
 
-        <Field
-          label="Your Name"
-          value={name}
-          onChange={setName}
-        />
+        <Field label="Full Name">
+          <input
+            required
+            value={fullName}
+            onChange={(e) =>
+              setFullName(
+                e.target.value
+              )
+            }
+            style={inputStyle}
+          />
+        </Field>
 
-        <Field
-          label="Email"
-          type="email"
-          value={email}
-          onChange={setEmail}
-        />
+        <Field label="Email">
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
+            style={inputStyle}
+          />
+        </Field>
 
-        <Field
-          label="Password"
-          type="password"
-          value={password}
-          onChange={setPassword}
-        />
+        <Field label="Password">
+          <input
+            required
+            type="password"
+            minLength={8}
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+            style={inputStyle}
+          />
+        </Field>
+
+        <Field label="Confirm Password">
+          <input
+            required
+            type="password"
+            minLength={8}
+            value={confirm}
+            onChange={(e) =>
+              setConfirm(
+                e.target.value
+              )
+            }
+            style={inputStyle}
+          />
+        </Field>
 
         {error && (
           <div
             style={{
-              marginTop: 15,
+              marginTop: 14,
               padding: 12,
-              borderRadius: 9,
-              background:
-                "#fef2f2",
-              color:
-                "#b91c1c",
-              fontWeight: 700
+              borderRadius: 8,
+              background: "#fef2f2",
+              color: "#b91c1c",
+              fontSize: 14,
             }}
           >
             {error}
@@ -201,25 +229,21 @@ export default function CreatorJoinPage() {
         )}
 
         <button
-          type="submit"
           disabled={loading}
           style={{
             width: "100%",
-            marginTop: 20,
-            padding: 14,
+            marginTop: 18,
+            height: 46,
             border: 0,
-            borderRadius: 10,
-            background:
-              loading
-                ? "#9ca3af"
-                : "#16a34a",
+            borderRadius: 8,
+            background: "#16a34a",
             color: "#fff",
-            fontWeight: 900
+            fontWeight: 800,
           }}
         >
           {loading
             ? "Creating Account..."
-            : "Create Creator Account"}
+            : "Create Account"}
         </button>
       </form>
     </main>
@@ -228,47 +252,32 @@ export default function CreatorJoinPage() {
 
 function Field({
   label,
-  value,
-  onChange,
-  type = "text"
+  children,
 }: {
   label: string;
-  value: string;
-  onChange: (
-    value: string
-  ) => void;
-  type?: string;
+  children: React.ReactNode;
 }) {
   return (
     <label
       style={{
         display: "block",
-        marginTop: 16,
-        fontWeight: 800
+        marginTop: 14,
+        fontWeight: 700,
       }}
     >
       {label}
-
-      <input
-        type={type}
-        value={value}
-        onChange={(e) =>
-          onChange(
-            e.target.value
-          )
-        }
-        required
-        style={{
-          width: "100%",
-          height: 44,
-          marginTop: 6,
-          padding:
-            "0 12px",
-          border:
-            "1px solid #d1d5db",
-          borderRadius: 8
-        }}
-      />
+      {children}
     </label>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  display: "block",
+  width: "100%",
+  height: 44,
+  marginTop: 6,
+  padding: "0 12px",
+  border: "1px solid #d1d5db",
+  borderRadius: 8,
+  boxSizing: "border-box",
+};
