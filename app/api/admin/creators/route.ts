@@ -1,28 +1,23 @@
+import { NextResponse } from "next/server";
 import {
-  NextResponse
-} from "next/server";
-
-import crypto from "crypto";
+  createHash,
+  randomBytes,
+} from "crypto";
 
 import {
-  getAuthenticatedAdmin
+  getAuthenticatedAdmin,
 } from "@/lib/server-admin-auth";
 
 import {
-  supabaseAdmin
+  supabaseAdmin,
 } from "@/lib/supabase-admin";
 
-function hashToken(token: string) {
-  return crypto
-    .createHash("sha256")
+function hashToken(
+  token: string
+) {
+  return createHash("sha256")
     .update(token)
     .digest("hex");
-}
-
-function createToken() {
-  return crypto
-    .randomBytes(32)
-    .toString("hex");
 }
 
 export async function GET() {
@@ -37,56 +32,60 @@ export async function GET() {
   }
 
   const [
-    settingsResult,
-    creatorsResult,
-    invitesResult
-  ] = await Promise.all([
-    supabaseAdmin
-      .from("creator_settings")
-      .select("max_creators")
-      .eq("id", true)
-      .single(),
+    { data: settings },
+    { data: creators },
+    { data: invites },
+  ] =
+    await Promise.all([
+      supabaseAdmin
+        .from("creator_settings")
+        .select("max_creators")
+        .eq("id", true)
+        .single(),
 
-    supabaseAdmin
-      .from("creator_profiles")
-      .select(
-        "id, email, full_name, status, created_at"
-      )
-      .order("created_at", {
-        ascending: false
-      }),
+      supabaseAdmin
+        .from("creator_profiles")
+        .select(
+          "id,email,full_name,status,created_at"
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        ),
 
-    supabaseAdmin
-      .from("creator_invites")
-      .select(
-        "id, email, expires_at, accepted_at, created_at"
-      )
-      .order("created_at", {
-        ascending: false
-      })
-      .limit(30)
-  ]);
-
-  if (settingsResult.error) {
-    return NextResponse.json(
-      {
-        error:
-          settingsResult.error.message
-      },
-      { status: 500 }
-    );
-  }
+      supabaseAdmin
+        .from("creator_invites")
+        .select(
+          "id,email,expires_at,created_at,accepted_at"
+        )
+        .is(
+          "accepted_at",
+          null
+        )
+        .gt(
+          "expires_at",
+          new Date().toISOString()
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        ),
+    ]);
 
   return NextResponse.json({
     maxCreators:
-      settingsResult.data
-        ?.max_creators ?? 10,
+      settings?.max_creators ||
+      10,
 
     creators:
-      creatorsResult.data ?? [],
+      creators || [],
 
     invites:
-      invitesResult.data ?? []
+      invites || [],
   });
 }
 
@@ -108,7 +107,7 @@ export async function POST(
 
   const email =
     String(
-      body.email ?? ""
+      body.email || ""
     )
       .trim()
       .toLowerCase();
@@ -122,93 +121,97 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Valid creator email is required."
+          "Valid email is required.",
       },
       { status: 400 }
     );
   }
 
-  const {
-    data: settings
-  } =
+  const { data: settings } =
     await supabaseAdmin
       .from("creator_settings")
       .select("max_creators")
       .eq("id", true)
       .single();
 
-  const maxCreators =
-    settings?.max_creators ?? 10;
-
   const {
-    count: activeCount
+    count: activeCount,
   } =
     await supabaseAdmin
       .from("creator_profiles")
-      .select(
-        "id",
-        {
-          count: "exact",
-          head: true
-        }
-      )
-      .eq("status", "active");
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .eq(
+        "status",
+        "active"
+      );
 
   const {
-    count: pendingCount
+    count: pendingCount,
   } =
     await supabaseAdmin
       .from("creator_invites")
-      .select(
-        "id",
-        {
-          count: "exact",
-          head: true
-        }
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .is(
+        "accepted_at",
+        null
       )
-      .is("accepted_at", null)
       .gt(
         "expires_at",
         new Date().toISOString()
       );
 
-  const usedSeats =
-    (activeCount ?? 0) +
-    (pendingCount ?? 0);
+  const max =
+    settings?.max_creators ||
+    10;
 
   if (
-    usedSeats >= maxCreators
+    (activeCount || 0) +
+      (pendingCount || 0) >=
+    max
   ) {
     return NextResponse.json(
       {
         error:
-          `Creator limit reached. Maximum allowed: ${maxCreators}.`
+          "Creator limit reached. Increase Max Creators first.",
       },
       { status: 409 }
     );
   }
 
-  /*
-   * Remove old pending invite
-   * for the same email.
-   */
-
   await supabaseAdmin
     .from("creator_invites")
-    .delete()
-    .eq("email", email)
-    .is("accepted_at", null);
+    .update({
+      expires_at:
+        new Date().toISOString(),
+    })
+    .eq(
+      "email",
+      email
+    )
+    .is(
+      "accepted_at",
+      null
+    );
 
   const token =
-    createToken();
+    randomBytes(32).toString(
+      "hex"
+    );
 
-  const tokenHash =
-    hashToken(token);
-
-  const expiresAt =
+  const expires =
     new Date(
       Date.now() +
-        7 * 24 * 60 * 60 * 1000
+        7 *
+          24 *
+          60 *
+          60 *
+          1000
     ).toISOString();
 
   const { error } =
@@ -216,32 +219,33 @@ export async function POST(
       .from("creator_invites")
       .insert({
         email,
-        token_hash: tokenHash,
-        expires_at: expiresAt,
-        created_by: admin.id
+        token_hash:
+          hashToken(token),
+        expires_at:
+          expires,
+        created_by:
+          admin.id,
       });
 
   if (error) {
     return NextResponse.json(
       {
         error:
-          error.message
+          error.message,
       },
       { status: 500 }
     );
   }
 
-  const origin =
-    new URL(request.url)
-      .origin;
-
   const inviteUrl =
-    `${origin}/creator/join/${token}`;
+    `${new URL(
+      request.url
+    ).origin}/creator/join/${token}`;
 
   return NextResponse.json({
     success: true,
     inviteUrl,
-    expiresAt
+    expiresAt: expires,
   });
 }
 
@@ -270,55 +274,25 @@ export async function PATCH(
     !Number.isInteger(
       maxCreators
     ) ||
-    maxCreators < 1 ||
-    maxCreators > 10000
+    maxCreators < 1
   ) {
     return NextResponse.json(
       {
         error:
-          "Maximum creators must be between 1 and 10000."
+          "Max creators must be a whole number greater than 0.",
       },
       { status: 400 }
     );
   }
 
-  const {
-    count: activeCount
-  } =
-    await supabaseAdmin
-      .from("creator_profiles")
-      .select(
-        "id",
-        {
-          count: "exact",
-          head: true
-        }
-      )
-      .eq("status", "active");
-
-  if (
-    maxCreators <
-    (activeCount ?? 0)
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          "Maximum cannot be lower than the current active creator count."
-      },
-      { status: 400 }
-    );
-  }
-
-  const {
-    error
-  } =
+  const { error } =
     await supabaseAdmin
       .from("creator_settings")
       .update({
         max_creators:
           maxCreators,
         updated_at:
-          new Date().toISOString()
+          new Date().toISOString(),
       })
       .eq("id", true);
 
@@ -326,7 +300,7 @@ export async function PATCH(
     return NextResponse.json(
       {
         error:
-          error.message
+          error.message,
       },
       { status: 500 }
     );
@@ -334,6 +308,6 @@ export async function PATCH(
 
   return NextResponse.json({
     success: true,
-    maxCreators
+    maxCreators,
   });
 }
