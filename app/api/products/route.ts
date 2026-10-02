@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createProduct, getProductsByStoreId } from "@/lib/products";
+import { canManageStore } from "@/lib/creator-auth";
 
 export async function GET(request: Request) {
   try {
@@ -33,6 +34,17 @@ export async function POST(request: Request) {
     }
     if (!Number.isFinite(price) || price < 0) {
       return NextResponse.json({ error: "Price must be valid." }, { status: 400 });
+    }
+
+    // ===== PART 23 - SECURITY CHECK =====
+    const access = await canManageStore(storeId);
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: "Forbidden",
+        },
+        { status: 403 }
+      );
     }
 
     const product = await createProduct({
