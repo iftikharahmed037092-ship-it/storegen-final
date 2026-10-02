@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteProduct, updateProduct } from "@/lib/products";
 import { canManageStore } from "@/lib/creator-auth";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 interface RouteContext { params: Promise<{ id: string }> }
 
