@@ -1,51 +1,33 @@
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase-browser";
+import Link from "next/link";
 
-export default function CreateStorePage() {
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+import WebsiteGenerator from "@/components/admin/WebsiteGenerator";
 
-  const handleCreate = async () => {
-    if (!name) return alert("Store name likho");
-    setLoading(true);
-    const { data: { user } } = await supabaseBrowser.auth.getUser();
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-    const { data, error } = await supabaseBrowser
-      .from("stores")
-      .insert({ name, owner_id: user.id })
-      .select()
-      .single();
-    
-    setLoading(false);
-    if (error) {
-      alert(error.message);
-    } else {
-      router.push(`/creator`);
-    }
-  };
-
+export default function CreatorCreatePage() {
   return (
-    <div style={{ padding: 24, maxWidth: 500 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900 }}>Create New Website</h1>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Store Name"
-        style={{ width: "100%", padding: 12, marginTop: 20, borderRadius: 8, border: "1px solid #ccc" }}
-      />
-      <button
-        onClick={handleCreate}
-        disabled={loading}
-        style={{ marginTop: 15, width: "100%", padding: 12, background: "#111827", color: "#fff", borderRadius: 8, fontWeight: 800 }}
+    <div>
+      <Link
+        href="/creator"
+        style={{
+          color: "#2563eb",
+          fontWeight: 700,
+        }}
       >
-        {loading ? "Creating..." : "Create"}
-      </button>
+        ← Back to Creator Dashboard
+      </Link>
+
+      <div
+        style={{
+          marginTop: 20,
+        }}
+      >
+        <WebsiteGenerator
+          afterCreate={(slug) =>
+            `/creator?created=${encodeURIComponent(
+              slug
+            )}`
+          }
+        />
+      </div>
     </div>
   );
 }
