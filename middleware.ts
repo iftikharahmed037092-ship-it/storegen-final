@@ -1,45 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
+import { updateSupabaseSession } from "@/lib/supabase-middleware";
 
 function normalizeHostname(hostname: string) {
   return hostname.toLowerCase().trim().replace(/:\d+$/, "").replace(/^www\./, "");
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  const authResponse = await updateSupabaseSession(request);
+
   const hostname = normalizeHostname(request.headers.get("host") || "");
   const masterDomain = normalizeHostname(process.env.NEXT_PUBLIC_MASTER_DOMAIN || "");
   const pathname = request.nextUrl.pathname;
 
-  // 1. Local development - Allow
   if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".localhost")) {
-    return NextResponse.next();
+    return authResponse;
   }
 
-  // 2. Vercel domains - IMPORTANT FIX: Allow all vercel.app domains
   if (hostname.includes("vercel.app") || hostname.includes("vercel.com")) {
-    return NextResponse.next();
+    return authResponse;
   }
 
-  // 3. Master domain - Allow
   if (masterDomain && (hostname === masterDomain || hostname === `www.${masterDomain}` || hostname.endsWith(`.${masterDomain}`))) {
-    return NextResponse.next();
+    return authResponse;
   }
 
-  // 4. Static files and APIs - Allow
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname === "/favicon.ico" ||
-    pathname.includes(".")
+    pathname.includes(".") ||
+    pathname.startsWith("/__custom_domain")
   ) {
-    return NextResponse.next();
+    return authResponse;
   }
 
-  // 5. Admin routes - Always master
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    return NextResponse.next();
+  if (
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/creator" ||
+    pathname.startsWith("/creator/") ||
+    pathname === "/dashboard-creator" ||
+    pathname.startsWith("/dashboard-creator/") ||
+    pathname.startsWith("/auth")
+  ) {
+    return authResponse;
   }
 
-  // 6. Custom domain routing - Only if NOT master and NOT vercel
   const url = request.nextUrl.clone();
   url.pathname = `/__custom_domain${pathname}`;
   url.searchParams.set("__domain", hostname);
