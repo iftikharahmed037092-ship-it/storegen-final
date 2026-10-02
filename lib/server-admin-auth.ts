@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-interface AdminUser {
+export interface AdminUser {
   id: string;
   email: string;
   role: string;
@@ -13,28 +13,24 @@ export async function getAuthenticatedAdmin(): Promise<AdminUser | null> {
     await createSupabaseServerClient();
 
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  const {
-    data: admin,
-    error
-  } = await supabaseAdmin
-    .from("admin_users")
-    .select(
-      "id, email, role, is_active"
-    )
-    .eq("id", user.id)
-    .eq("is_active", true)
-    .maybeSingle();
+  const { data: admin, error } =
+    await supabaseAdmin
+      .from("admin_users")
+      .select(
+        "id,email,role,is_active"
+      )
+      .eq("id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
 
   if (error || !admin) {
     return null;
   }
 
-  return admin;
+  return admin as AdminUser;
 }
