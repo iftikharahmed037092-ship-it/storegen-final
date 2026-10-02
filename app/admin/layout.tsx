@@ -3,29 +3,21 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedAdmin } from "@/lib/server-admin-auth";
 import LogoutButton from "@/components/auth/LogoutButton";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export default async function AdminLayout({
-  children
-}: AdminLayoutProps) {
-  // STEP 9: Protection - اگر Master Admin نہیں تو Login پر بھیج دو
+export default async function AdminLayout({ children }: AdminLayoutProps) {
   const admin = await getAuthenticatedAdmin();
   if (!admin) {
     redirect("/login?next=/admin");
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f3f4f6"
-      }}
-    >
+    <div style={{ minHeight: "100vh", background: "#f3f4f6" }}>
       <header
         style={{
           background: "#111827",
@@ -33,7 +25,7 @@ export default async function AdminLayout({
           padding: "14px 20px",
           position: "sticky",
           top: 0,
-          zIndex: 100
+          zIndex: 100,
         }}
       >
         <div
@@ -44,88 +36,34 @@ export default async function AdminLayout({
             alignItems: "center",
             justifyContent: "space-between",
             gap: 20,
-            flexWrap: "wrap"
+            flexWrap: "wrap",
           }}
         >
-          <Link
-            href="/admin"
-            style={{
-              fontSize: 20,
-              fontWeight: 900
-            }}
-          >
+          <Link href="/admin" style={{ fontSize: 20, fontWeight: 900 }}>
             Master Admin
           </Link>
 
-          <nav
-            style={{
-              display: "flex",
-              gap: 8,
-              flexWrap: "wrap",
-              alignItems: "center"
-            }}
-          >
-            <AdminLink
-              href="/admin"
-              label="Dashboard"
-            />
-
-            <AdminLink
-              href="/admin/stores"
-              label="Stores"
-            />
-
-            <AdminLink
-              href="/admin/orders"
-              label="Orders"
-            />
-
-            <AdminLink
-              href="/admin/products"
-              label="Products"
-            />
-
-            <AdminLink
-              href="/admin/customers"
-              label="Customers"
-            />
-
-            <AdminLink
-              href="/admin/analytics"
-              label="Analytics"
-            />
-
-            {/* NEW: Creators والا Link */}
-            <AdminLink
-              href="/admin/creators"
-              label="Creators ⭐"
-            />
-
+          <nav style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <AdminLink href="/admin" label="Dashboard" />
+            <AdminLink href="/admin/stores" label="Stores" />
+            <AdminLink href="/admin/orders" label="Orders" />
+            <AdminLink href="/admin/products" label="Products" />
+            <AdminLink href="/admin/customers" label="Customers" />
+            <AdminLink href="/admin/analytics" label="Analytics" />
+            <AdminLink href="/admin/creators" label="Creators ⭐" />
             <LogoutButton />
           </nav>
         </div>
       </header>
 
-      <main
-        style={{
-          maxWidth: 1400,
-          margin: "0 auto",
-          padding: "25px 20px"
-        }}
-      >
+      <main style={{ maxWidth: 1400, margin: "0 auto", padding: "25px 20px" }}>
         {children}
       </main>
     </div>
   );
 }
 
-function AdminLink({
-  href,
-  label
-}: {
-  href: string;
-  label: string;
-}) {
+function AdminLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
@@ -134,7 +72,7 @@ function AdminLink({
         borderRadius: 7,
         background: "#1f2937",
         fontSize: 14,
-        fontWeight: 700
+        fontWeight: 700,
       }}
     >
       {label}
