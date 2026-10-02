@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthenticatedCreator } from "@/lib/creator-auth";
 import { createClient } from "@/lib/supabase-server";
-import LogoutButton from "@/components/LogoutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +22,7 @@ export default async function ProtectedCreatorLayout({ children }: { children: R
         <Link href="/creator/create" style={{ display: "block", marginBottom: 10, color: "#fff", textDecoration: "none" }}>Create Store</Link>
         {store && <Link href={`/store/${store.id}`} style={{ display: "block", color: "#fff", textDecoration: "none" }}>View Store</Link>}
         <div style={{ marginTop: 30 }}>
-          <LogoutButton />
+          <Link href="/api/auth/logout" style={{ color: "#f87171", textDecoration: "none" }}>Logout</Link>
         </div>
       </aside>
       <main style={{ flex: 1, background: "#f9fafb" }}>{children}</main>
