@@ -1,32 +1,33 @@
 import { NextResponse } from "next/server";
 
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  createSupabaseServerClient,
+} from "@/lib/supabase-server";
+
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
 
 export async function GET() {
   const supabase =
     await createSupabaseServerClient();
 
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json(
-      {
-        role: null
-      },
-      {
-        status: 401
-      }
-    );
+    return NextResponse.json({
+      authenticated: false,
+      role: null,
+    });
   }
 
   const { data: admin } =
     await supabaseAdmin
       .from("admin_users")
       .select(
-        "id, role, is_active"
+        "id,email,role,is_active"
       )
       .eq("id", user.id)
       .eq("is_active", true)
@@ -34,27 +35,28 @@ export async function GET() {
 
   if (admin) {
     return NextResponse.json({
-      role: "master_admin"
+      authenticated: true,
+      role: "master_admin",
     });
   }
 
   const { data: creator } =
     await supabaseAdmin
       .from("creator_profiles")
-      .select(
-        "id, status"
-      )
+      .select("id,status")
       .eq("id", user.id)
       .eq("status", "active")
       .maybeSingle();
 
   if (creator) {
     return NextResponse.json({
-      role: "creator"
+      authenticated: true,
+      role: "creator",
     });
   }
 
   return NextResponse.json({
-    role: null
+    authenticated: true,
+    role: null,
   });
 }
