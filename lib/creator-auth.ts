@@ -1,48 +1,97 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  createSupabaseServerClient,
+} from "@/lib/supabase-server";
+
+import {
+  supabaseAdmin,
+} from "@/lib/supabase-admin";
 
 export interface CreatorProfile {
   id: string;
   email: string;
   full_name: string;
-  status: "active" | "suspended";
+  status:
+    | "active"
+    | "suspended";
   created_at: string;
 }
 
-export async function getAuthenticatedCreator(): Promise<CreatorProfile | null> {
-  const supabase = await createSupabaseServerClient();
+export async function getAuthenticatedCreator(): Promise<
+  CreatorProfile | null
+> {
+  try {
+    const supabase =
+      await createSupabaseServerClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: {
+        user,
+      },
+      error: userError,
+    } =
+      await supabase.auth.getUser();
 
-  if (!user) return null;
+    if (
+      userError ||
+      !user
+    ) {
+      return null;
+    }
 
-  const { data: creator, error } =
-    await supabaseAdmin
-      .from("creator_profiles")
-      .select(
-        "id,email,full_name,status,created_at"
-      )
-      .eq("id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
+    const {
+      data: creator,
+      error,
+    } =
+      await supabaseAdmin
+        .from(
+          "creator_profiles"
+        )
+        .select(
+          "id,email,full_name,status,created_at"
+        )
+        .eq(
+          "id",
+          user.id
+        )
+        .eq(
+          "status",
+          "active"
+        )
+        .maybeSingle();
 
-  if (error || !creator) {
+    if (
+      error ||
+      !creator
+    ) {
+      return null;
+    }
+
+    return creator as CreatorProfile;
+  } catch {
     return null;
   }
-
-  return creator as CreatorProfile;
 }
 
 export async function canManageStore(
   storeId: string
 ) {
+  if (!storeId) {
+    return {
+      allowed: false,
+      role: null,
+      userId: null,
+    };
+  }
+
+  /*
+   * First check Master Admin.
+   */
   const {
     getAuthenticatedAdmin,
-  } = await import(
-    "@/lib/server-admin-auth"
-  );
+  } =
+    await import(
+      "@/lib/server-admin-auth"
+    );
 
   const admin =
     await getAuthenticatedAdmin();
@@ -55,6 +104,9 @@ export async function canManageStore(
     };
   }
 
+  /*
+   * Then check Creator.
+   */
   const creator =
     await getAuthenticatedCreator();
 
@@ -66,15 +118,27 @@ export async function canManageStore(
     };
   }
 
-  const { data } =
+  const {
+    data,
+    error,
+  } =
     await supabaseAdmin
       .from("creator_stores")
       .select("id")
-      .eq("creator_id", creator.id)
-      .eq("store_id", storeId)
+      .eq(
+        "creator_id",
+        creator.id
+      )
+      .eq(
+        "store_id",
+        storeId
+      )
       .maybeSingle();
 
-  if (!data) {
+  if (
+    error ||
+    !data
+  ) {
     return {
       allowed: false,
       role: "creator" as const,
