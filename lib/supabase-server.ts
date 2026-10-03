@@ -15,17 +15,19 @@ export async function createSupabaseServerClient() {
 
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(
-              ({ name, value, options }) => {
-                cookieStore.set(
-                  name,
-                  value,
-                  options
-                );
-              }
-            );
+            for (const {
+              name,
+              value,
+              options,
+            } of cookiesToSet) {
+              cookieStore.set(name, value, options);
+            }
           } catch {
-            // Middleware refreshes cookies.
+            /*
+             * Server Components cannot always write cookies.
+             * Middleware/Route Handlers are responsible for
+             * refreshing the Supabase session.
+             */
           }
         },
       },
