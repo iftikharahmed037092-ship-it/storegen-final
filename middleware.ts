@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
     return authResponse;
   }
 
-  if (masterDomain && (hostname === masterDomain || hostname === `www.${masterDomain}` || hostname.endsWith(`.${masterDomain}`))) {
+  if (masterDomain && (hostname === masterDomain || hostname === `www.${masterDomain}` || hostname === `www.${masterDomain}` || hostname.endsWith(`.${masterDomain}`))) {
     return authResponse;
   }
 
@@ -41,6 +41,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/creator/") ||
     pathname === "/dashboard-creator" ||
     pathname.startsWith("/dashboard-creator/") ||
+    pathname === "/editor" ||
+    pathname.startsWith("/editor/") ||
     pathname.startsWith("/auth")
   ) {
     return authResponse;
